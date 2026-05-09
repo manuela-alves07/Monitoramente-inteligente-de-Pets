@@ -1,6 +1,7 @@
 from ultralytics import YOLO
 import cv2
 import json
+import os
 from datetime import datetime, timedelta
 
 VIDEO  = "one_cat_eating.mp4"
@@ -18,9 +19,9 @@ comendo_agora    = False
 inicio_refeicao  = None
 ultima_refeicao  = None
 saiu_em          = None
-eventos          = []        # refeições confirmadas
-cheiradas        = []        # aproximações curtas (cheirando)
-ultimo_status    = "aguardando"  # para mostrar "CHEIRANDO" brevemente na tela
+eventos          = []        
+cheiradas        = []       
+ultimo_status    = "aguardando"
 
 
 def animal_perto_tigela(animal_bbox, tigela_bbox):
@@ -132,8 +133,6 @@ while cap.isOpened():
                     print(f"  Cheirando detectado: {duracao:.1f}s")
 
     #Legendas no video
-
-    # Detectar apatia: sem interação com tigela há mais de 2 horas
     ref = ultima_refeicao or inicio_video
     apatico = (agora - ref).total_seconds() > 2 * 3600
 
@@ -149,7 +148,7 @@ while cap.isOpened():
         status_cor = (0, 200, 255)
         sem_txt    = "Aproximacao curta detectada"
         sem_cor    = (0, 200, 255)
-        ultimo_status = "aguardando"  # mostra só por 1 frame e volta
+        ultimo_status = "aguardando"
     else:
         status_txt = "APATICO" if apatico else "aguardando"
         status_cor = (0, 0, 255) if apatico else (180, 180, 180)
@@ -195,8 +194,8 @@ print(f"Cheiradas detectadas  : {len(cheiradas)}")
 for i, c in enumerate(cheiradas, 1):
     print(f"  {i}. {c['horario']}  —  {c['duracao_s']}s")
 
-# Salvar relatório em JSON
 relatorio = {
+    "gerado_em": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     "data": datetime.now().strftime("%Y-%m-%d"),
     "horario_inicio": inicio_video.strftime("%H:%M:%S"),
     "horario_fim": datetime.now().strftime("%H:%M:%S"),
@@ -207,7 +206,6 @@ relatorio = {
     "alertas": []
 }
 
-# Adicionar alertas se houver
 if ultima_refeicao:
     sem_comer = (datetime.now() - ultima_refeicao).total_seconds()
     if sem_comer > 6 * 3600:
@@ -223,6 +221,7 @@ if len(eventos) == 0:
         "nivel": "aviso"
     })
 
+os.makedirs("relatorios", exist_ok=True)
 nome_arquivo = f"relatorios/relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 with open(nome_arquivo, "w", encoding="utf-8") as f:
     json.dump(relatorio, f, ensure_ascii=False, indent=2)
