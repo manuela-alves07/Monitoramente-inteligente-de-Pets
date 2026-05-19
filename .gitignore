@@ -6,4 +6,6 @@
 *.jpeg
 runs/
 relatorios/
+dashboard_alertas/relatorios/
 __pycache__/
+*.pyc

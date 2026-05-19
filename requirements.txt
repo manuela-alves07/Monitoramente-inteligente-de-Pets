@@ -1,0 +1,8 @@
+# Detecção (equipe)
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+
+# Painel do colaborador (dashboard.py)
+streamlit>=1.28.0
+pandas>=2.0.0
+plotly>=5.0.0
