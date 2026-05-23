@@ -1,0 +1,10 @@
+# Detecção
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+
+# API
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Utilitários
+pandas>=2.0.0

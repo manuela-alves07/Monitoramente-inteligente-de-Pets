@@ -1,0 +1,121 @@
+.cartao-baia {
+  background: #111b2b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 22px 20px;
+  min-height: 150px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cartao-baia:hover:not(.cartao-baia--vazia) {
+  border-color: rgba(0, 212, 200, 0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.cartao-baia--vazia .baia-topo,
+.cartao-baia--vazia .baia-pet {
+  opacity: 0.45;
+}
+
+/* ── Topo ── */
+.baia-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.baia-numero {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a8ea8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.baia-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.baia-bolinha {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  animation: pulsar 1.8s ease-in-out infinite;
+}
+
+@keyframes pulsar {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+/* ── Pet ── */
+.baia-pet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.baia-emoji {
+  font-size: 32px;
+}
+
+.baia-nome {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e8edf5;
+}
+
+.baia-vazia-texto {
+  font-size: 15px;
+  color: #7a8ea8;
+  margin: auto;
+}
+
+/* ── Rodapé ── */
+.baia-rodape {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  padding-right: 48px;
+}
+
+.baia-ultima {
+  font-size: 12px;
+  color: #7a8ea8;
+}
+
+.baia-ultima strong {
+  color: #e8edf5;
+}
+
+.botao-olho {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: rgba(0, 212, 200, 0.1);
+  border: 1px solid rgba(0, 212, 200, 0.25);
+  color: #00d4c8;
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.botao-olho:hover {
+  background: rgba(0, 212, 200, 0.2);
+}
