@@ -1,0 +1,224 @@
+.pagina-cadastro {
+  width: 100vw;
+  min-height: 100vh;
+  background: #0c1420;
+  display: flex;
+  flex-direction: column;
+}
+
+.cadastro-cabecalho {
+  height: 64px;
+  background: #111b2b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+
+.botao-voltar-cad {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #7a8ea8;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.botao-voltar-cad:hover {
+  color: #e8edf5;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cadastro-cabecalho h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e8edf5;
+}
+
+.cadastro-conteudo {
+  padding: 36px 48px 60px;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.cadastro-secao {
+  background: #111b2b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.cadastro-secao h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7a8ea8;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 20px;
+}
+
+.cadastro-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.campo--largo {
+  grid-column: span 2;
+}
+
+.campo--cheio {
+  grid-column: 1 / -1;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7a8ea8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  background: #0c1420;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: #e8edf5;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  border-color: rgba(0, 212, 200, 0.5);
+}
+
+.campo input::placeholder,
+.campo textarea::placeholder {
+  color: #3d5068;
+}
+
+.campo select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8ea8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.campo textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.campo-aviso {
+  font-size: 13px;
+  color: #ff8080;
+  padding: 10px 0;
+}
+
+.cadastro-erro {
+  color: #ff8080;
+  font-size: 14px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  border-radius: 10px;
+}
+
+.cadastro-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.botao-cancelar {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #7a8ea8;
+  border-radius: 10px;
+  padding: 11px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.botao-cancelar:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #e8edf5;
+}
+
+.botao-cadastrar {
+  background: #00d4c8;
+  border: none;
+  color: #0c1420;
+  border-radius: 10px;
+  padding: 11px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.botao-cadastrar:hover {
+  opacity: 0.88;
+}
+
+.obrigatorio {
+  color: #ff8080;
+  margin-left: 2px;
+}
+
+.campo--erro input,
+.campo--erro select,
+.campo--erro textarea {
+  border-color: rgba(255, 80, 80, 0.5);
+}
+
+.campo--erro input:focus,
+.campo--erro select:focus,
+.campo--erro textarea:focus {
+  border-color: rgba(255, 80, 80, 0.8);
+  box-shadow: 0 0 0 3px rgba(255, 80, 80, 0.1);
+}
+
+.mensagem-erro {
+  display: block;
+  font-size: 12px;
+  color: #ff8080;
+  margin-top: 5px;
+}
+
+.cadastro-rodape-info {
+  font-size: 12px;
+  color: #7a8ea8;
+  margin-top: 4px;
+  margin-bottom: 20px;
+}
