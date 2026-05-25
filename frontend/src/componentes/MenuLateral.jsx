@@ -67,13 +67,24 @@ function IconeConfiguracoes() {
   )
 }
 
+function IconeLogout() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  )
+}
+
 const itensMenu = [
-  { rotulo: 'Dashboard',      icone: <IconeDashboard />,     rota: '/painel'   },
-  { rotulo: 'Novo Cadastro',  icone: <IconeNovoCadastro />,  rota: '/cadastro' },
-  { rotulo: 'Câmeras',        icone: <IconeCameras />,       rota: null         },
-  { rotulo: 'Alertas',        icone: <IconeAlertas />,       rota: null         },
-  { rotulo: 'Relatórios',     icone: <IconeRelatorios />,    rota: null         },
-  { rotulo: 'Configurações',  icone: <IconeConfiguracoes />, rota: null         },
+  { rotulo: 'Dashboard',      icone: <IconeDashboard />,     rota: '/painel'        },
+  { rotulo: 'Novo Cadastro',  icone: <IconeNovoCadastro />,  rota: '/cadastro'      },
+  { rotulo: 'Câmeras',        icone: <IconeCameras />,       rota: null             },
+  { rotulo: 'Alertas',        icone: <IconeAlertas />,       rota: null             },
+  { rotulo: 'Relatórios',     icone: <IconeRelatorios />,    rota: null             },
+  { rotulo: 'Configurações',  icone: <IconeConfiguracoes />, rota: '/configuracoes' },
 ]
 
 export default function MenuLateral({ aberto, onFechar }) {
@@ -84,6 +95,11 @@ export default function MenuLateral({ aberto, onFechar }) {
       navegar(rota)
       onFechar()
     }
+  }
+
+  function logout() {
+    localStorage.removeItem('vetvision-usuario')
+    navegar('/')
   }
 
   return (
@@ -104,7 +120,7 @@ export default function MenuLateral({ aberto, onFechar }) {
         {itensMenu.map((item) => (
           <li key={item.rotulo}>
             <button
-              className={`item-menu ${item.destaque ? 'item-menu--destaque' : ''}`}
+              className="item-menu"
               onClick={() => navegar_para(item.rota)}
             >
               <span className="item-icone">{item.icone}</span>
@@ -113,6 +129,13 @@ export default function MenuLateral({ aberto, onFechar }) {
           </li>
         ))}
       </ul>
+
+      <div className="menu-rodape">
+        <button className="item-menu item-menu--logout" onClick={logout}>
+          <span className="item-icone"><IconeLogout /></span>
+          <span className="item-rotulo">Sair</span>
+        </button>
+      </div>
 
     </nav>
   )
