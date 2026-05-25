@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { analisarVideo } from '../servicos/api'
+import { analisarVideo, darBaixa } from '../servicos/api'
 import './PaginaDetalhesPet.css'
 
 function IconeVoltar() {
@@ -34,12 +34,14 @@ export default function PaginaDetalhesPet() {
 
   const baia      = state?.baia
   const chaveStorage = `obs-baia-${baia?.numero}`
+  const idAnimal  = baia?.pet?.id
 
   const [observacoes, setObservacoes]     = useState('')
   const [salvo, setSalvo]                 = useState(false)
   const [relatorioLocal, setRelatorioLocal] = useState(state?.relatorio ?? null)
   const [analisando, setAnalisando]       = useState(false)
   const [erroAnalise, setErroAnalise]     = useState('')
+  const [dandoBaixa, setDandoBaixa]       = useState(false)
   const inputVideoRef = useRef(null)
 
   useEffect(() => {
@@ -59,18 +61,26 @@ export default function PaginaDetalhesPet() {
     setAnalisando(true)
     setErroAnalise('')
     try {
-      const resultado = await analisarVideo(arquivo)
+      const resultado = await analisarVideo(arquivo, idAnimal)
       setRelatorioLocal(resultado)
-
-      const baias = JSON.parse(localStorage.getItem('vetvision-baias') || '[]')
-      const atualizadas = baias.map(b =>
-        b.numero === baia.numero ? { ...b, temDados: true } : b
-      )
-      localStorage.setItem('vetvision-baias', JSON.stringify(atualizadas))
     } catch {
       setErroAnalise('Erro ao analisar o vídeo. Verifique se o servidor está rodando.')
     } finally {
       setAnalisando(false)
+    }
+  }
+
+  async function darBaixaPet() {
+    if (!idAnimal) return
+    if (!window.confirm(`Confirmar baixa de ${baia.pet.nome}?`)) return
+    setDandoBaixa(true)
+    try {
+      await darBaixa(idAnimal)
+      navegar('/painel')
+    } catch {
+      alert('Erro ao dar baixa. Verifique se o servidor está rodando.')
+    } finally {
+      setDandoBaixa(false)
     }
   }
 
@@ -116,6 +126,16 @@ export default function PaginaDetalhesPet() {
         <button className="botao-voltar" onClick={() => navegar('/painel')}>
           <IconeVoltar /> Voltar ao Painel
         </button>
+        {idAnimal && (
+          <button
+            className="botao-salvar"
+            onClick={darBaixaPet}
+            disabled={dandoBaixa}
+            style={{ marginLeft: 'auto' }}
+          >
+            {dandoBaixa ? 'Dando baixa...' : 'Dar baixa'}
+          </button>
+        )}
       </header>
 
       <main className="detalhes-conteudo">

@@ -7,3 +7,5 @@
 runs/
 relatorios/
 __pycache__/
+*.pyc
+.env

@@ -23,6 +23,15 @@ python app.py
 
 API disponível em `http://localhost:5000`
 
+### Banco (PostgreSQL)
+
+Rodar o `commands.sql` no pgAdmin, copiar `.env.example` para `.env` com a senha, depois:
+
+```bash
+py -m pip install psycopg2-binary python-dotenv
+py -m banco.seed
+```
+
 ### Frontend
 
 ```bash
