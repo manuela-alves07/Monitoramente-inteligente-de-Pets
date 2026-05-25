@@ -98,7 +98,7 @@
   color: #e8edf5;
 }
 
-.botao-olho {
+.cartao-baia .botao-olho {
   position: absolute;
   bottom: 14px;
   right: 14px;
@@ -116,6 +116,6 @@
   transition: background 0.2s;
 }
 
-.botao-olho:hover {
+.cartao-baia .botao-olho:hover {
   background: rgba(0, 212, 200, 0.2);
 }

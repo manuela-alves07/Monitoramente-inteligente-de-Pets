@@ -1,0 +1,248 @@
+.pagina-config {
+  width: 100vw;
+  min-height: 100vh;
+  background: #0c1420;
+  display: flex;
+  flex-direction: column;
+}
+
+.config-cabecalho {
+  height: 64px;
+  background: #111b2b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 32px;
+  flex-shrink: 0;
+}
+
+.config-cabecalho h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e8edf5;
+  margin: 0;
+}
+
+.botao-voltar-config {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #7a8ea8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.botao-voltar-config:hover {
+  color: #e8edf5;
+}
+
+.config-conteudo {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.config-secao {
+  background: #111b2b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.config-secao h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e8edf5;
+  margin: 0 0 16px 0;
+}
+
+.config-descricao {
+  font-size: 13px;
+  color: #7a8ea8;
+  margin: -10px 0 16px 0;
+}
+
+.config-campo label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7a8ea8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.config-campo input {
+  width: 100%;
+  background: #0c1420;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #e8edf5;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.config-campo input:focus {
+  border-color: rgba(0, 212, 200, 0.4);
+}
+
+.config-campo input::placeholder {
+  color: #3d5068;
+}
+
+.config-colunas {
+  display: flex;
+  gap: 12px;
+}
+
+.botao-coluna {
+  flex: 1;
+  padding: 12px;
+  background: #0c1420;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #7a8ea8;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.botao-coluna:hover {
+  border-color: rgba(0, 212, 200, 0.3);
+  color: #e8edf5;
+}
+
+.botao-coluna--ativo {
+  border-color: #00d4c8;
+  color: #00d4c8;
+  background: rgba(0, 212, 200, 0.08);
+}
+
+.config-secao-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.config-secao-topo h2 {
+  margin-bottom: 4px;
+}
+
+.botao-add-baia {
+  background: #00d4c8;
+  color: #0c1420;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+  margin-top: 2px;
+}
+
+.botao-add-baia:hover {
+  opacity: 0.85;
+}
+
+.lista-baias-config {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-baia-config {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0c1420;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.baia-config-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.baia-config-numero {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e8edf5;
+  min-width: 64px;
+}
+
+.baia-config-status {
+  font-size: 13px;
+}
+
+.baia-config-status--ocupada {
+  color: #00d4c8;
+}
+
+.baia-config-status--vazia {
+  color: #7a8ea8;
+}
+
+.botao-remover-baia {
+  background: none;
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  color: #ff8080;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.botao-remover-baia:hover:not(:disabled) {
+  background: rgba(255, 80, 80, 0.1);
+}
+
+.botao-remover-baia:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.config-acoes {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.botao-salvar-config {
+  background: linear-gradient(135deg, #00d4c8, #00a89e);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 13px 32px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.botao-salvar-config:hover {
+  opacity: 0.88;
+}

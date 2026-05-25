@@ -45,6 +45,12 @@ function carregarBaias() {
   return BAIAS_PADRAO
 }
 
+function carregarConfig() {
+  const salva = localStorage.getItem('vetvision-config')
+  if (salva) return JSON.parse(salva)
+  return { nomeClinica: '', colunas: 3 }
+}
+
 function resolverStatus(relatorio) {
   if (!relatorio) return 'descansando'
   if (relatorio.alertas?.length > 0) return 'alerta'
@@ -62,6 +68,7 @@ export default function PaginaPainel() {
   const [baias, setBaias]           = useState([])
   const [relatorio, setRelatorio]   = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [config]                    = useState(carregarConfig)
   const navegar = useNavigate()
 
   useEffect(() => {
@@ -96,7 +103,7 @@ export default function PaginaPainel() {
           </button>
           <div className="marca-topo">
             <LogoPatinha />
-            <span>VetVision</span>
+            <span>{config.nomeClinica || 'VetVision'}</span>
           </div>
         </div>
         <div className="topo-direita">
@@ -127,7 +134,7 @@ export default function PaginaPainel() {
         {carregando ? (
           <p className="estado-mensagem">Carregando...</p>
         ) : (
-          <div className="grade-baias">
+          <div className="grade-baias" style={{ gridTemplateColumns: `repeat(${config.colunas}, 1fr)` }}>
             {baias.map((baia) => (
               <CartaoBaia
                 key={baia.numero}
