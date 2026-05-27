@@ -9,7 +9,6 @@ relatorios/
 uploads/
 __pycache__/
 *.pyc
-.env
 
 # Frontend (gerado / dependencias)
 frontend/node_modules/
