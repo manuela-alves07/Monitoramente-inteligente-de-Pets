@@ -17,6 +17,7 @@ DIST_MAX         = 1.5
 TEMPO_MIN        = 5
 TEMPO_BEBER_MIN  = 3
 TOLERANCIA_PAUSA = 2
+PROCESSAR_A_CADA = 5
 
 
 def centro(bbox):
@@ -66,6 +67,10 @@ while cap.isOpened():
 
     frame_n += 1
     agora = inicio_video + timedelta(seconds=frame_n / fps)
+
+    if frame_n % PROCESSAR_A_CADA != 0:
+        out.write(frame)
+        continue
 
     results = model.track(frame, persist=True,
                           classes=CLASSE_PETS + [CLASSE_TIGELA],

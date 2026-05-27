@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { listarBaias, cadastrarAnimal } from '../servicos/api'
 import './PaginaCadastroPet.css'
 
 function IconeVoltar() {
@@ -9,12 +10,6 @@ function IconeVoltar() {
       <polyline points="15 18 9 12 15 6" />
     </svg>
   )
-}
-
-function carregarBaias() {
-  const salvas = localStorage.getItem('vetvision-baias')
-  if (salvas) return JSON.parse(salvas)
-  return Array.from({ length: 6 }, (_, i) => ({ numero: i + 1, pet: null, temDados: false }))
 }
 
 function mascaraTelefone(valor) {
@@ -31,10 +26,11 @@ function validarTelefone(valor) {
 
 export default function PaginaCadastroPet() {
   const navegar = useNavigate()
-  const baias = carregarBaias()
-  const baiasVazias = baias.filter(b => !b.pet)
-
   const hoje = new Date().toISOString().split('T')[0]
+
+  const [baiasVazias, setBaiasVazias] = useState([])
+  const [salvando, setSalvando]       = useState(false)
+  const [erroGeral, setErroGeral]     = useState('')
 
   const [form, setForm] = useState({
     nome: '',
@@ -44,7 +40,7 @@ export default function PaginaCadastroPet() {
     peso: '',
     tutor: '',
     telefone: '',
-    baia: baiasVazias[0]?.numero ?? '',
+    baia: '',
     motivo: '',
     diagnostico: '',
     medicamentos: '',
@@ -54,6 +50,18 @@ export default function PaginaCadastroPet() {
   })
 
   const [erros, setErros] = useState({})
+
+  useEffect(() => {
+    listarBaias()
+      .then(dados => {
+        const vazias = dados.filter(b => !b.id_animal || b.status_internacao !== 'internado')
+        setBaiasVazias(vazias)
+        if (vazias.length > 0) {
+          setForm(prev => ({ ...prev, baia: vazias[0].id_baia }))
+        }
+      })
+      .catch(() => setErroGeral('Erro ao carregar baias. Verifique se o servidor está rodando.'))
+  }, [])
 
   function atualizar(campo, valor) {
     setForm(prev => ({ ...prev, [campo]: valor }))
@@ -86,37 +94,41 @@ export default function PaginaCadastroPet() {
     return Object.keys(novosErros).length === 0
   }
 
-  function salvar(e) {
+  async function salvar(e) {
     e.preventDefault()
     if (!validar()) return
 
-    const todasBaias = carregarBaias()
-    const atualizadas = todasBaias.map(b => {
-      if (b.numero === Number(form.baia)) {
-        return {
-          ...b,
-          pet: {
-            nome:         form.nome.trim(),
-            tipo:         form.tipo,
-            raca:         form.raca.trim()         || '—',
-            idade:        form.idade.trim()         || '—',
-            peso:         form.peso.trim()          || '—',
-            tutor:        form.tutor.trim(),
-            telefone:     form.telefone.trim(),
-            motivo:       form.motivo.trim(),
-            diagnostico:  form.diagnostico.trim()   || '—',
-            medicamentos: form.medicamentos.trim()  || '—',
-            alergias:     form.alergias.trim()      || 'Nenhuma',
-            veterinario:  form.veterinario.trim(),
-            dataEntrada:  form.dataEntrada,
-          },
-        }
-      }
-      return b
-    })
+    setSalvando(true)
+    setErroGeral('')
+    try {
+      const animal = await cadastrarAnimal({
+        nome:    form.nome.trim(),
+        especie: form.tipo,
+        raca:    form.raca.trim() || null,
+        tutor:   form.tutor.trim(),
+        id_baia: Number(form.baia),
+      })
 
-    localStorage.setItem('vetvision-baias', JSON.stringify(atualizadas))
-    navegar('/painel')
+      const extras = JSON.parse(localStorage.getItem('vetvision-extras') || '{}')
+      extras[animal.id_animal] = {
+        telefone:     form.telefone.trim(),
+        idade:        form.idade.trim()        || '—',
+        peso:         form.peso.trim()         || '—',
+        motivo:       form.motivo.trim(),
+        diagnostico:  form.diagnostico.trim()  || '—',
+        medicamentos: form.medicamentos.trim() || '—',
+        alergias:     form.alergias.trim()     || 'Nenhuma',
+        veterinario:  form.veterinario.trim(),
+        dataEntrada:  form.dataEntrada,
+      }
+      localStorage.setItem('vetvision-extras', JSON.stringify(extras))
+
+      navegar('/painel')
+    } catch (err) {
+      setErroGeral(err.message || 'Erro ao cadastrar animal.')
+    } finally {
+      setSalvando(false)
+    }
   }
 
   return (
@@ -130,6 +142,8 @@ export default function PaginaCadastroPet() {
       </header>
 
       <main className="cadastro-conteudo">
+        {erroGeral && <div className="alerta-erro-cadastro">{erroGeral}</div>}
+
         <form onSubmit={salvar} noValidate>
 
           <div className="cadastro-secao">
@@ -194,8 +208,8 @@ export default function PaginaCadastroPet() {
                 {baiasVazias.length > 0 ? (
                   <select value={form.baia} onChange={e => atualizar('baia', e.target.value)}>
                     {baiasVazias.map(b => (
-                      <option key={b.numero} value={b.numero}>
-                        Baia {String(b.numero).padStart(2, '0')}
+                      <option key={b.id_baia} value={b.id_baia}>
+                        {b.numero}
                       </option>
                     ))}
                   </select>
@@ -247,8 +261,8 @@ export default function PaginaCadastroPet() {
             <button type="button" className="botao-cancelar" onClick={() => navegar('/painel')}>
               Cancelar
             </button>
-            <button type="submit" className="botao-cadastrar">
-              Cadastrar Animal
+            <button type="submit" className="botao-cadastrar" disabled={salvando}>
+              {salvando ? 'Cadastrando...' : 'Cadastrar Animal'}
             </button>
           </div>
 

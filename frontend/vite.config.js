@@ -7,7 +7,14 @@ export default defineConfig({
     proxy: {
       '/relatorios': 'http://localhost:5000',
       '/video':      'http://localhost:5000',
-      '/analisar':   'http://localhost:5000',
+      '/baias':      'http://localhost:5000',
+      '/animais':    'http://localhost:5000',
+      '/usuarios':   'http://localhost:5000',
+      '/analisar': {
+        target: 'http://localhost:5000',
+        timeout: 300000,
+        proxyTimeout: 300000,
+      },
     },
   },
 })

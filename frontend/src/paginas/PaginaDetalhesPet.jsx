@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { analisarVideo } from '../servicos/api'
+import { analisarVideo, darBaixa } from '../servicos/api'
 import './PaginaDetalhesPet.css'
 
 function IconeVoltar() {
@@ -40,6 +40,7 @@ export default function PaginaDetalhesPet() {
   const [relatorioLocal, setRelatorioLocal] = useState(state?.relatorio ?? null)
   const [analisando, setAnalisando]       = useState(false)
   const [erroAnalise, setErroAnalise]     = useState('')
+  const [dandoBaixa, setDandoBaixa]       = useState(false)
   const inputVideoRef = useRef(null)
 
   useEffect(() => {
@@ -51,6 +52,18 @@ export default function PaginaDetalhesPet() {
     localStorage.setItem(chaveStorage, observacoes)
     setSalvo(true)
     setTimeout(() => setSalvo(false), 2000)
+  }
+
+  async function darAlta() {
+    if (!window.confirm(`Confirma a alta de ${pet?.nome}? A baia será liberada.`)) return
+    setDandoBaixa(true)
+    try {
+      await darBaixa(pet.id)
+      navegar('/painel')
+    } catch {
+      alert('Erro ao dar alta. Verifique se o servidor está rodando.')
+      setDandoBaixa(false)
+    }
   }
 
   async function enviarVideo(e) {
@@ -250,6 +263,12 @@ export default function PaginaDetalhesPet() {
             value={observacoes} onChange={e => setObservacoes(e.target.value)} />
           <button className="botao-salvar" onClick={salvarObservacoes}>
             {salvo ? '✓ Salvo!' : 'Salvar observações'}
+          </button>
+        </div>
+
+        <div className="detalhes-acoes-alta">
+          <button className="botao-dar-alta" onClick={darAlta} disabled={dandoBaixa}>
+            {dandoBaixa ? 'Processando...' : 'Dar Alta ao Animal'}
           </button>
         </div>
 

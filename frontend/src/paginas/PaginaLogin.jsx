@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PainelIlustracao from '../componentes/PainelIlustracao'
+import { loginUsuario } from '../servicos/api'
 import './PaginaLogin.css'
 
 function IconeUsuario() {
@@ -68,11 +69,23 @@ export default function PaginaLogin() {
   const [senha, setSenha]               = useState('')
   const [lembrarMe, setLembrarMe]       = useState(true)
   const [mostrarSenha, setMostrarSenha] = useState(false)
+  const [erro, setErro]                 = useState('')
 
-  function handleEnviarFormulario(evento) {
+  function limparErro() {
+    if (erro) setErro('')
+  }
+
+  async function handleEnviarFormulario(evento) {
     evento.preventDefault()
-    if (usuario.trim()) localStorage.setItem('vetvision-usuario', usuario.trim())
-    navegar('/painel')
+    try {
+      const user = await loginUsuario(usuario, senha)
+      localStorage.setItem('vetvision-usuario', user.nome)
+      localStorage.setItem('vetvision-login',   user.login)
+      localStorage.setItem('vetvision-role',    user.role)
+      navegar('/painel')
+    } catch (err) {
+      setErro(err.message || 'Usuário ou senha incorretos.')
+    }
   }
 
   return (
@@ -92,6 +105,8 @@ export default function PaginaLogin() {
         <h1 className="titulo">Bem-vindo ao VetVision</h1>
         <p className="subtitulo">Monitoramento Inteligente para Pequenos Animais</p>
 
+        {erro && <div className="alerta-erro">{erro}</div>}
+
         <form onSubmit={handleEnviarFormulario} className="formulario">
 
           <div className="campo">
@@ -103,7 +118,7 @@ export default function PaginaLogin() {
                 type="text"
                 placeholder="email@gmail.com"
                 value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
+                onChange={(e) => { setUsuario(e.target.value); limparErro() }}
                 autoComplete="username"
               />
             </div>
@@ -118,7 +133,7 @@ export default function PaginaLogin() {
                 type={mostrarSenha ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={senha}
-                onChange={(e) => setSenha(e.target.value)}
+                onChange={(e) => { setSenha(e.target.value); limparErro() }}
                 autoComplete="current-password"
               />
               <button
@@ -142,21 +157,15 @@ export default function PaginaLogin() {
               <span className="trilho-toggle" />
               <span className="texto-lembrar">Lembrar-me</span>
             </label>
-            <a href="/esqueci-senha" className="link-esqueceu">
-              Esqueci minha Senha?
-            </a>
+            <span className="link-esqueceu" style={{ fontSize: 12, color: '#7a8ea8' }}>
+              Esqueceu a senha? Fale com o administrador.
+            </span>
           </div>
 
           <button type="submit" className="botao-entrar">
             Acessar o Painel
           </button>
 
-          <p className="texto-cadastro">
-            Não tem uma conta?{' '}
-            <a href="/solicitar-acesso" className="link-cadastro">
-              Solicite acesso à sua clínica.
-            </a>
-          </p>
 
         </form>
       </div>

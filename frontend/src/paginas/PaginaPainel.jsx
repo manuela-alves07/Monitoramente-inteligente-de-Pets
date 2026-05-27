@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MenuLateral from '../componentes/MenuLateral'
 import CartaoBaia from '../componentes/CartaoBaia'
-import { buscarRelatorios, buscarRelatorio } from '../servicos/api'
+import { listarBaias } from '../servicos/api'
 import './PaginaPainel.css'
 
 function IconeMenu() {
@@ -29,20 +29,21 @@ function LogoPatinha() {
   )
 }
 
-const BAIAS_PADRAO = [
-  { numero: 1, pet: { nome: 'Luna', tipo: 'gato', raca: 'Persa', idade: '3 anos', peso: '3.8 kg', tutor: 'Maria Silva', telefone: '(11) 99999-9999', motivo: 'Pós-operatório', diagnostico: 'Castração realizada com sucesso', medicamentos: 'Antibiótico 2x ao dia', alergias: 'Nenhuma', veterinario: 'Dra. Ana', dataEntrada: '2026-05-18' }, temDados: true  },
-  { numero: 2, pet: { nome: 'Scout', tipo: 'cachorro', raca: 'Labrador', idade: '2 anos', peso: '28 kg', tutor: 'João Pereira', telefone: '(11) 98888-8888', motivo: 'Observação pós-trauma', diagnostico: 'Trauma leve, sem fraturas', medicamentos: 'Anti-inflamatório', alergias: 'Penicilina', veterinario: 'Dr. Carlos', dataEntrada: '2026-05-21' }, temDados: false },
-  { numero: 3, pet: null, temDados: false },
-  { numero: 4, pet: null, temDados: false },
-  { numero: 5, pet: null, temDados: false },
-  { numero: 6, pet: null, temDados: false },
-]
-
-function carregarBaias() {
-  const salvas = localStorage.getItem('vetvision-baias')
-  if (salvas) return JSON.parse(salvas)
-  localStorage.setItem('vetvision-baias', JSON.stringify(BAIAS_PADRAO))
-  return BAIAS_PADRAO
+function mapearBaia(b) {
+  const temPet = b.id_animal && b.status_internacao === 'internado'
+  return {
+    id_baia: b.id_baia,
+    numero:  b.numero,
+    temDados: false,
+    pet: temPet ? {
+      id:          b.id_animal,
+      nome:        b.nome,
+      tipo:        b.especie,
+      raca:        b.raca || '—',
+      tutor:       b.tutor,
+      dataEntrada: b.data_entrada ? b.data_entrada.slice(0, 10) : '',
+    } : null,
+  }
 }
 
 function carregarConfig() {
@@ -51,35 +52,19 @@ function carregarConfig() {
   return { nomeClinica: '', colunas: 3 }
 }
 
-function resolverStatus(relatorio) {
-  if (!relatorio) return 'descansando'
-  if (relatorio.alertas?.length > 0) return 'alerta'
-  return 'descansando'
-}
-
-function ultimaRefeicao(relatorio) {
-  const refeicoes = relatorio?.refeicoes ?? []
-  if (!refeicoes.length) return null
-  return refeicoes[refeicoes.length - 1].inicio
-}
 
 export default function PaginaPainel() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [baias, setBaias]           = useState([])
-  const [relatorio, setRelatorio]   = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [config]                    = useState(carregarConfig)
   const navegar = useNavigate()
 
   useEffect(() => {
-    setBaias(carregarBaias())
     async function carregar() {
       try {
-        const lista = await buscarRelatorios()
-        if (lista.length > 0) {
-          const dados = await buscarRelatorio(lista[0])
-          setRelatorio(dados)
-        }
+        const baiasDB = await listarBaias()
+        setBaias(baiasDB.map(mapearBaia))
       } finally {
         setCarregando(false)
       }
@@ -89,7 +74,7 @@ export default function PaginaPainel() {
 
   function abrirDetalhesBaia(baia) {
     navegar(`/baia/${baia.numero}`, {
-      state: { baia, relatorio: baia.temDados ? relatorio : null },
+      state: { baia, relatorio: null },
     })
   }
 
@@ -140,8 +125,8 @@ export default function PaginaPainel() {
                 key={baia.numero}
                 numero={baia.numero}
                 pet={baia.pet}
-                status={!baia.pet ? 'vazia' : baia.temDados ? resolverStatus(relatorio) : 'descansando'}
-                ultimaRefeicao={baia.temDados ? ultimaRefeicao(relatorio) : null}
+                status={!baia.pet ? 'vazia' : 'descansando'}
+                ultimaRefeicao={null}
                 onVerDetalhes={() => abrirDetalhesBaia(baia)}
               />
             ))}

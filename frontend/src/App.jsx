@@ -4,6 +4,7 @@ import PaginaPainel from './paginas/PaginaPainel'
 import PaginaDetalhesPet from './paginas/PaginaDetalhesPet'
 import PaginaCadastroPet from './paginas/PaginaCadastroPet'
 import PaginaConfiguracoes from './paginas/PaginaConfiguracoes'
+import PaginaUsuarios from './paginas/PaginaUsuarios'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/baia/:numero"    element={<PaginaDetalhesPet />} />
         <Route path="/cadastro"        element={<PaginaCadastroPet />} />
         <Route path="/configuracoes"   element={<PaginaConfiguracoes />} />
+        <Route path="/usuarios"        element={<PaginaUsuarios />} />
       </Routes>
     </BrowserRouter>
   )

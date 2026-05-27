@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { isAdmin } from '../servicos/usuarios'
 import './MenuLateral.css'
 
 function IconeDashboard() {
@@ -79,12 +80,10 @@ function IconeLogout() {
 }
 
 const itensMenu = [
-  { rotulo: 'Dashboard',      icone: <IconeDashboard />,     rota: '/painel'        },
-  { rotulo: 'Novo Cadastro',  icone: <IconeNovoCadastro />,  rota: '/cadastro'      },
-  { rotulo: 'Câmeras',        icone: <IconeCameras />,       rota: null             },
-  { rotulo: 'Alertas',        icone: <IconeAlertas />,       rota: null             },
-  { rotulo: 'Relatórios',     icone: <IconeRelatorios />,    rota: null             },
-  { rotulo: 'Configurações',  icone: <IconeConfiguracoes />, rota: '/configuracoes' },
+  { rotulo: 'Dashboard', icone: <IconeDashboard />, rota: '/painel' },
+  { rotulo: 'Novo animal', icone: <IconeNovoCadastro />, rota: '/cadastro' },
+  { rotulo: 'Alertas', icone: <IconeAlertas />, rota: null },
+  { rotulo: 'Configurações', icone: <IconeConfiguracoes />, rota: '/configuracoes' },
 ]
 
 export default function MenuLateral({ aberto, onFechar }) {
@@ -99,6 +98,8 @@ export default function MenuLateral({ aberto, onFechar }) {
 
   function logout() {
     localStorage.removeItem('vetvision-usuario')
+    localStorage.removeItem('vetvision-login')
+    localStorage.removeItem('vetvision-role')
     navegar('/')
   }
 
@@ -111,7 +112,7 @@ export default function MenuLateral({ aberto, onFechar }) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6"  y1="6" x2="18" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
       </div>
@@ -128,6 +129,14 @@ export default function MenuLateral({ aberto, onFechar }) {
             </button>
           </li>
         ))}
+        {isAdmin() && (
+          <li>
+            <button className="item-menu" onClick={() => navegar_para('/usuarios')}>
+              <span className="item-icone"><IconeNovoCadastro /></span>
+              <span className="item-rotulo">Usuários</span>
+            </button>
+          </li>
+        )}
       </ul>
 
       <div className="menu-rodape">

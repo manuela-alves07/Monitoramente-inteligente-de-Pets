@@ -259,3 +259,31 @@
   color: #ff8080;
   margin-bottom: 12px;
 }
+
+.detalhes-acoes-alta {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0 32px;
+}
+
+.botao-dar-alta {
+  background: rgba(255, 80, 80, 0.15);
+  border: 1px solid rgba(255, 80, 80, 0.4);
+  color: #ff8080;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.botao-dar-alta:hover:not(:disabled) {
+  background: rgba(255, 80, 80, 0.25);
+  border-color: rgba(255, 80, 80, 0.7);
+}
+
+.botao-dar-alta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
