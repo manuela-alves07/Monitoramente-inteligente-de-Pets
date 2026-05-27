@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PainelIlustracao from '../componentes/PainelIlustracao'
+import { fazerLogin } from '../servicos/api'
+import { salvarUsuarioLogado } from '../servicos/sessao'
 import './PaginaLogin.css'
 
 function IconeUsuario() {
@@ -64,15 +66,31 @@ function LogoVetVision() {
 export default function PaginaLogin() {
   const navegar = useNavigate()
 
-  const [usuario, setUsuario]           = useState('')
+  const [email, setEmail]               = useState('')
   const [senha, setSenha]               = useState('')
-  const [lembrarMe, setLembrarMe]       = useState(true)
   const [mostrarSenha, setMostrarSenha] = useState(false)
+  const [erro, setErro]                 = useState('')
+  const [enviando, setEnviando]         = useState(false)
 
-  function handleEnviarFormulario(evento) {
+  async function handleEnviarFormulario(evento) {
     evento.preventDefault()
-    if (usuario.trim()) localStorage.setItem('vetvision-usuario', usuario.trim())
-    navegar('/painel')
+    setErro('')
+
+    if (!email.trim() || !senha) {
+      setErro('Informe e-mail e senha.')
+      return
+    }
+
+    setEnviando(true)
+    try {
+      const resposta = await fazerLogin(email.trim(), senha)
+      salvarUsuarioLogado(resposta.usuario)
+      navegar('/painel')
+    } catch (err) {
+      setErro(err.message || 'Não foi possível entrar.')
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -95,16 +113,16 @@ export default function PaginaLogin() {
         <form onSubmit={handleEnviarFormulario} className="formulario">
 
           <div className="campo">
-            <label htmlFor="usuario">E-mail ou Usuário</label>
+            <label htmlFor="email">E-mail</label>
             <div className="campo-icone">
               <span className="icone-esquerda"><IconeUsuario /></span>
               <input
-                id="usuario"
-                type="text"
-                placeholder="email@gmail.com"
-                value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
-                autoComplete="username"
+                id="email"
+                type="email"
+                placeholder="email@clinica.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
           </div>
@@ -132,31 +150,11 @@ export default function PaginaLogin() {
             </div>
           </div>
 
-          <div className="linha-opcoes">
-            <label className="toggle-lembrar">
-              <input
-                type="checkbox"
-                checked={lembrarMe}
-                onChange={(e) => setLembrarMe(e.target.checked)}
-              />
-              <span className="trilho-toggle" />
-              <span className="texto-lembrar">Lembrar-me</span>
-            </label>
-            <a href="/esqueci-senha" className="link-esqueceu">
-              Esqueci minha Senha?
-            </a>
-          </div>
+          {erro && <p className="login-erro">{erro}</p>}
 
-          <button type="submit" className="botao-entrar">
-            Acessar o Painel
+          <button type="submit" className="botao-entrar" disabled={enviando}>
+            {enviando ? 'Entrando...' : 'Acessar o Painel'}
           </button>
-
-          <p className="texto-cadastro">
-            Não tem uma conta?{' '}
-            <a href="/solicitar-acesso" className="link-cadastro">
-              Solicite acesso à sua clínica.
-            </a>
-          </p>
 
         </form>
       </div>

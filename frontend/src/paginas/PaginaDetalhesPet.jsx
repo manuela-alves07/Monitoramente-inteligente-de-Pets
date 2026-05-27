@@ -36,12 +36,12 @@ export default function PaginaDetalhesPet() {
   const chaveStorage = `obs-baia-${baia?.numero}`
   const idAnimal  = baia?.pet?.id
 
-  const [observacoes, setObservacoes]     = useState('')
-  const [salvo, setSalvo]                 = useState(false)
+  const [observacoes, setObservacoes]       = useState('')
+  const [salvo, setSalvo]                   = useState(false)
   const [relatorioLocal, setRelatorioLocal] = useState(state?.relatorio ?? null)
-  const [analisando, setAnalisando]       = useState(false)
-  const [erroAnalise, setErroAnalise]     = useState('')
-  const [dandoBaixa, setDandoBaixa]       = useState(false)
+  const [analisando, setAnalisando]         = useState(false)
+  const [erroAnalise, setErroAnalise]       = useState('')
+  const [dandoBaixa, setDandoBaixa]         = useState(false)
   const inputVideoRef = useRef(null)
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function PaginaDetalhesPet() {
           <div className="detalhes-titulo">
             <span className="detalhes-emoji">🏠</span>
             <div>
-              <h1>Baia {baia ? String(baia.numero).padStart(2, '0') : '—'}</h1>
+              <h1>Baia {baia ? baia.numero : '—'}</h1>
               <span className="detalhes-subtitulo">Nenhum animal internado no momento</span>
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function PaginaDetalhesPet() {
           <div>
             <h1>{pet.nome}</h1>
             <span className="detalhes-subtitulo">
-              Baia {String(baia.numero).padStart(2, '0')} · {{ gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', passaro: 'Pássaro' }[pet.tipo] ?? pet.tipo} · {pet.raca ?? '—'}
+              Baia {baia.numero} · {{ gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', passaro: 'Pássaro' }[pet.tipo] ?? pet.tipo} · {pet.raca ?? '—'}
             </span>
           </div>
         </div>
@@ -155,11 +155,11 @@ export default function PaginaDetalhesPet() {
         <div className="detalhes-cards">
           <div className="detalhe-card">
             <small>Idade</small>
-            <strong>{pet.idade ?? '—'}</strong>
+            <strong>{pet.idade || '—'}</strong>
           </div>
           <div className="detalhe-card">
             <small>Peso</small>
-            <strong>{pet.peso ?? '—'}</strong>
+            <strong>{pet.peso || '—'}</strong>
           </div>
           <div className="detalhe-card">
             <small>Internado há</small>
@@ -176,27 +176,29 @@ export default function PaginaDetalhesPet() {
           <div className="detalhes-atividades">
             <div className="atividade-item">
               <span className="atividade-label">Motivo da internação</span>
-              <span className="atividade-valor">{pet.motivo ?? '—'}</span>
+              <span className="atividade-valor">{pet.motivo || '—'}</span>
             </div>
             <div className="atividade-item">
               <span className="atividade-label">Diagnóstico inicial</span>
-              <span className="atividade-valor">{pet.diagnostico ?? '—'}</span>
+              <span className="atividade-valor">{pet.diagnostico || '—'}</span>
             </div>
             <div className="atividade-item">
               <span className="atividade-label">Medicamentos em uso</span>
-              <span className="atividade-valor">{pet.medicamentos ?? '—'}</span>
+              <span className="atividade-valor">{pet.medicamentos || '—'}</span>
             </div>
             <div className="atividade-item">
               <span className="atividade-label">Alergias</span>
-              <span className="atividade-valor alerta-alergia">{pet.alergias ?? 'Nenhuma'}</span>
+              <span className="atividade-valor alerta-alergia">{pet.alergias || 'Nenhuma'}</span>
             </div>
             <div className="atividade-item">
               <span className="atividade-label">Veterinário responsável</span>
-              <span className="atividade-valor">{pet.veterinario ?? '—'}</span>
+              <span className="atividade-valor">{pet.veterinario || '—'}</span>
             </div>
             <div className="atividade-item">
               <span className="atividade-label">Tutor</span>
-              <span className="atividade-valor">{pet.tutor ?? '—'}{pet.telefone && pet.telefone !== '—' ? ` · ${pet.telefone}` : ''}</span>
+              <span className="atividade-valor">
+                {pet.tutor || '—'}{pet.telefone ? ` · ${pet.telefone}` : ''}
+              </span>
             </div>
             <div className="atividade-item">
               <span className="atividade-label">Data de entrada</span>

@@ -256,6 +256,25 @@
   text-decoration: underline;
 }
 
+.link-botao {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.login-erro {
+  margin: -10px 0 14px;
+  padding: 10px 12px;
+  background: rgba(255, 99, 132, 0.12);
+  border: 1px solid rgba(255, 99, 132, 0.35);
+  color: #d24a6a;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
 @media (max-width: 680px) {
   .lado-esquerdo {
     display: none;

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { sair } from '../servicos/sessao'
 import './MenuLateral.css'
 
 function IconeDashboard() {
@@ -98,7 +99,7 @@ export default function MenuLateral({ aberto, onFechar }) {
   }
 
   function logout() {
-    localStorage.removeItem('vetvision-usuario')
+    sair()
     navegar('/')
   }
 

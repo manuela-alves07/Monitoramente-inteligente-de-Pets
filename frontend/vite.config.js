@@ -10,6 +10,7 @@ export default defineConfig({
       '/analisar':   'http://localhost:5000',
       '/baias':      'http://localhost:5000',
       '/animais':    'http://localhost:5000',
+      '/login':      'http://localhost:5000',
     },
   },
 })

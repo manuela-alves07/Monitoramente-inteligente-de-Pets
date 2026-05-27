@@ -23,13 +23,29 @@ python app.py
 
 API disponível em `http://localhost:5000`
 
-### Banco (PostgreSQL)
+### Banco de dados (PostgreSQL — Neon ou local)
 
-Rodar o `commands.sql` no pgAdmin, copiar `.env.example` para `.env` com a senha, depois:
+1. Copie `.env.example` → `.env`
+2. Cole sua `DATABASE_URL` do Neon (peça ao responsável pelo banco) **entre aspas**:
 
-```bash
-py -m pip install psycopg2-binary python-dotenv
-py -m banco.seed
+```env
+DATABASE_URL="postgresql://usuario:senha@host.neon.tech/neondb?sslmode=require"
+```
+
+3. Teste a conexão:
+
+```powershell
+py -c "from banco.database import testar_conexao; print(testar_conexao())"
+```
+
+> **Banco novo (1ª vez):** abra `banco/schema.sql` e `banco/migracoes.sql` no **SQL Editor do Neon** (ou pgAdmin) e execute o conteúdo. Depois rode `py -m banco.seed` para popular com a clínica padrão.
+
+Cada clínica tem suas próprias baias; o usuário só vê dados da clínica dele (`id_clinica` no login).
+
+**Criar usuário** (PowerShell, pede ao responsável pelo banco):
+
+```powershell
+py -c "from banco.repositorio import inserir_usuario; print(inserir_usuario('Nome', 'email@clinica.com', 'senha123', 1, 'admin'))"
 ```
 
 ### Frontend
@@ -64,7 +80,7 @@ Painel disponível em `http://localhost:5173`
 ├── analisar_comportamento.py # Análise de alimentação
 ├── alertas.py                # Geração de alertas
 ├── requirements.txt
-├── exemplos/                 # Vídeos de exemplo
-├── relatorios/               # Relatórios JSON gerados
+├── banco/                    # PostgreSQL (schema, API de dados)
+├── relatorios/               # Relatórios JSON gerados (gitignore)
 └── frontend/                 # React
 ```

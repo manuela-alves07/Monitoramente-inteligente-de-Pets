@@ -1,11 +1,17 @@
 *.mp4
-!exemplos/*.mp4
+exemplos/
 *.pt
 *.png
 *.jpg
 *.jpeg
 runs/
 relatorios/
+uploads/
 __pycache__/
 *.pyc
 .env
+
+# Frontend (gerado / dependencias)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/

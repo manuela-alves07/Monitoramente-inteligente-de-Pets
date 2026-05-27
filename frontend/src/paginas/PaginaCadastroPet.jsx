@@ -104,26 +104,21 @@ export default function PaginaCadastroPet() {
     setErroCadastro('')
     setSalvando(true)
     try {
-      const animal = await cadastrarAnimal({
-        nome: form.nome.trim(),
-        especie: form.tipo,
-        raca: form.raca.trim() || null,
-        tutor: form.tutor.trim(),
-        id_baia: Number(form.baia),
+      await cadastrarAnimal({
+        nome:         form.nome.trim(),
+        especie:      form.tipo,
+        raca:         form.raca.trim() || null,
+        tutor:        form.tutor.trim(),
+        id_baia:      Number(form.baia),
+        telefone:     form.telefone.trim() || null,
+        idade:        form.idade.trim() || null,
+        peso:         form.peso.trim() || null,
+        motivo:       form.motivo.trim() || null,
+        diagnostico:  form.diagnostico.trim() || null,
+        medicamentos: form.medicamentos.trim() || null,
+        alergias:     form.alergias.trim() || null,
+        veterinario:  form.veterinario.trim() || null,
       })
-
-      const extras = {
-        telefone:    form.telefone,
-        motivo:      form.motivo,
-        diagnostico: form.diagnostico,
-        medicamentos: form.medicamentos,
-        alergias:    form.alergias,
-        veterinario: form.veterinario,
-        dataEntrada: form.dataEntrada,
-        idade:       form.idade,
-        peso:        form.peso,
-      }
-      localStorage.setItem(`vetvision-pet-${animal.id_animal}`, JSON.stringify(extras))
       navegar('/painel')
     } catch (erro) {
       setErroCadastro(erro.message || 'Erro ao cadastrar.')

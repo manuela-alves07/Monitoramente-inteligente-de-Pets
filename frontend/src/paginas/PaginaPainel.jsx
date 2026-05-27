@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import MenuLateral from '../componentes/MenuLateral'
 import CartaoBaia from '../componentes/CartaoBaia'
 import { buscarRelatorios, buscarRelatorio, listarBaias } from '../servicos/api'
+import { inicialAvatar, usuarioLogado } from '../servicos/sessao'
 import './PaginaPainel.css'
 
 function IconeMenu() {
@@ -33,20 +34,23 @@ function mapearBaiaDoBanco(b) {
   const ehInternado = b.id_animal && b.status_internacao === 'internado'
   const pet = ehInternado
     ? {
-        id:          b.id_animal,
-        nome:        b.nome,
-        tipo:        b.especie,
-        raca:        b.raca || '—',
-        tutor:       b.tutor,
-        dataEntrada: b.data_entrada ? b.data_entrada.slice(0, 10) : '',
+        id:           b.id_animal,
+        nome:         b.nome,
+        tipo:         b.especie,
+        raca:         b.raca || '—',
+        tutor:        b.tutor,
+        telefone:     b.telefone,
+        idade:        b.idade,
+        peso:         b.peso,
+        motivo:       b.motivo,
+        diagnostico:  b.diagnostico,
+        medicamentos: b.medicamentos,
+        alergias:     b.alergias,
+        veterinario:  b.veterinario,
+        dataEntrada:  b.data_entrada ? b.data_entrada.slice(0, 10) : '',
       }
     : null
-  return {
-    id_baia: b.id_baia,
-    numero:  b.numero,
-    pet,
-    temDados: false,
-  }
+  return { id_baia: b.id_baia, numero: b.numero, pet }
 }
 
 function carregarConfig() {
@@ -68,14 +72,18 @@ function ultimaRefeicao(relatorio) {
 }
 
 export default function PaginaPainel() {
+  const navegar = useNavigate()
   const [menuAberto, setMenuAberto] = useState(false)
   const [baias, setBaias]           = useState([])
   const [relatorio, setRelatorio]   = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [config]                    = useState(carregarConfig)
-  const navegar = useNavigate()
 
   useEffect(() => {
+    if (!usuarioLogado()) {
+      navegar('/', { replace: true })
+      return
+    }
     async function carregar() {
       try {
         const baiasBanco = await listarBaias()
@@ -92,7 +100,7 @@ export default function PaginaPainel() {
       }
     }
     carregar()
-  }, [])
+  }, [navegar])
 
   function abrirDetalhesBaia(baia) {
     navegar(`/baia/${baia.numero}`, {
@@ -110,13 +118,11 @@ export default function PaginaPainel() {
           </button>
           <div className="marca-topo">
             <LogoPatinha />
-            <span>{config.nomeClinica || 'VetVision'}</span>
+            <span>{usuarioLogado()?.nome_clinica || config.nomeClinica || 'VetVision'}</span>
           </div>
         </div>
         <div className="topo-direita">
-          <div className="avatar">
-            {(localStorage.getItem('vetvision-usuario') ?? 'U')[0].toUpperCase()}
-          </div>
+          <div className="avatar">{inicialAvatar()}</div>
         </div>
       </header>
 
@@ -144,7 +150,7 @@ export default function PaginaPainel() {
           <div className="grade-baias" style={{ gridTemplateColumns: `repeat(${config.colunas}, 1fr)` }}>
             {baias.map((baia) => (
               <CartaoBaia
-                key={baia.numero}
+                key={baia.id_baia}
                 numero={baia.numero}
                 pet={baia.pet}
                 status={!baia.pet ? 'vazia' : resolverStatus(relatorio)}
