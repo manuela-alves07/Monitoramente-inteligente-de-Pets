@@ -9,6 +9,7 @@ from banco.repositorio import (
     autenticar_usuario,
     atualizar_senha_usuario,
     buscar_animal,
+    criar_baia,
     dar_baixa,
     garantir_baias,
     inserir_animal,
@@ -19,6 +20,7 @@ from banco.repositorio import (
     listar_baias,
     listar_eventos,
     listar_usuarios,
+    remover_baia,
     remover_usuario,
 )
 
@@ -53,6 +55,18 @@ def rota_listar_baias():
     return jsonify([serializar(b) for b in listar_baias()])
 
 
+@app.route("/baias", methods=["POST"])
+def rota_criar_baia():
+    baia = criar_baia()
+    return jsonify(serializar(baia)), 201
+
+
+@app.route("/baias/<int:id_baia>", methods=["DELETE"])
+def rota_remover_baia(id_baia):
+    remover_baia(id_baia)
+    return jsonify({"ok": True})
+
+
 @app.route("/animais", methods=["GET"])
 def rota_listar_animais():
     return jsonify([serializar(a) for a in listar_animais()])
@@ -69,10 +83,17 @@ def rota_cadastrar_animal():
     id_animal = inserir_animal(
         nome=dados["nome"],
         especie=dados["especie"],
-        raca=dados.get("raca"),
         tutor=dados["tutor"],
         id_baia=int(dados["id_baia"]),
-        status_internacao=dados.get("status_internacao", "internado"),
+        raca=dados.get("raca"),
+        idade=dados.get("idade"),
+        peso=dados.get("peso"),
+        telefone=dados.get("telefone"),
+        motivo=dados.get("motivo"),
+        diagnostico=dados.get("diagnostico"),
+        medicamentos=dados.get("medicamentos"),
+        alergias=dados.get("alergias"),
+        veterinario=dados.get("veterinario"),
     )
     return jsonify(serializar(buscar_animal(id_animal))), 201
 
