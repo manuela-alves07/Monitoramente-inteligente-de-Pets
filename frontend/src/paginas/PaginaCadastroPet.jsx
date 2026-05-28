@@ -101,27 +101,21 @@ export default function PaginaCadastroPet() {
     setSalvando(true)
     setErroGeral('')
     try {
-      const animal = await cadastrarAnimal({
-        nome:    form.nome.trim(),
-        especie: form.tipo,
-        raca:    form.raca.trim() || null,
-        tutor:   form.tutor.trim(),
-        id_baia: Number(form.baia),
+      await cadastrarAnimal({
+        nome:        form.nome.trim(),
+        especie:     form.tipo,
+        tutor:       form.tutor.trim(),
+        id_baia:     Number(form.baia),
+        raca:        form.raca.trim()         || null,
+        idade:       form.idade.trim()        || null,
+        peso:        form.peso.trim()         || null,
+        telefone:    form.telefone.trim()     || null,
+        motivo:      form.motivo.trim()       || null,
+        diagnostico: form.diagnostico.trim()  || null,
+        medicamentos:form.medicamentos.trim() || null,
+        alergias:    form.alergias.trim()     || null,
+        veterinario: form.veterinario.trim()  || null,
       })
-
-      const extras = JSON.parse(localStorage.getItem('vetvision-extras') || '{}')
-      extras[animal.id_animal] = {
-        telefone:     form.telefone.trim(),
-        idade:        form.idade.trim()        || '—',
-        peso:         form.peso.trim()         || '—',
-        motivo:       form.motivo.trim(),
-        diagnostico:  form.diagnostico.trim()  || '—',
-        medicamentos: form.medicamentos.trim() || '—',
-        alergias:     form.alergias.trim()     || 'Nenhuma',
-        veterinario:  form.veterinario.trim(),
-        dataEntrada:  form.dataEntrada,
-      }
-      localStorage.setItem('vetvision-extras', JSON.stringify(extras))
 
       navegar('/painel')
     } catch (err) {

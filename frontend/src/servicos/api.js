@@ -23,6 +23,18 @@ export async function listarBaias() {
   return resposta.json()
 }
 
+export async function criarBaia() {
+  const resposta = await fetch('/baias', { method: 'POST' })
+  if (!resposta.ok) throw new Error('Erro ao criar baia')
+  return resposta.json()
+}
+
+export async function excluirBaia(idBaia) {
+  const resposta = await fetch(`/baias/${idBaia}`, { method: 'DELETE' })
+  if (!resposta.ok) throw new Error('Erro ao remover baia')
+  return resposta.json()
+}
+
 export async function cadastrarAnimal(dados) {
   const resposta = await fetch('/animais', {
     method: 'POST',
@@ -33,6 +45,12 @@ export async function cadastrarAnimal(dados) {
     const erro = await resposta.json().catch(() => ({}))
     throw new Error(erro.erro || 'Erro ao cadastrar animal')
   }
+  return resposta.json()
+}
+
+export async function buscarAnimal(idAnimal) {
+  const resposta = await fetch(`/animais/${idAnimal}`)
+  if (!resposta.ok) throw new Error('Erro ao buscar animal')
   return resposta.json()
 }
 
