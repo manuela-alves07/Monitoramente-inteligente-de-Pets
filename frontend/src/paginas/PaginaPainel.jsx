@@ -125,7 +125,7 @@ export default function PaginaPainel() {
                 key={baia.numero}
                 numero={baia.numero}
                 pet={baia.pet}
-                status={!baia.pet ? 'vazia' : 'descansando'}
+                status={!baia.pet ? 'vazia' : 'aguardando'}
                 ultimaRefeicao={null}
                 onVerDetalhes={() => abrirDetalhesBaia(baia)}
               />

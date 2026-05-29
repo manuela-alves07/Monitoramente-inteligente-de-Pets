@@ -5,17 +5,21 @@ import PaginaDetalhesPet from './paginas/PaginaDetalhesPet'
 import PaginaCadastroPet from './paginas/PaginaCadastroPet'
 import PaginaConfiguracoes from './paginas/PaginaConfiguracoes'
 import PaginaUsuarios from './paginas/PaginaUsuarios'
+import PaginaRelatorio from './paginas/PaginaRelatorio'
+import PaginaHistorico from './paginas/PaginaHistorico'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"                element={<PaginaLogin />} />
-        <Route path="/painel"          element={<PaginaPainel />} />
-        <Route path="/baia/:numero"    element={<PaginaDetalhesPet />} />
-        <Route path="/cadastro"        element={<PaginaCadastroPet />} />
-        <Route path="/configuracoes"   element={<PaginaConfiguracoes />} />
-        <Route path="/usuarios"        element={<PaginaUsuarios />} />
+        <Route path="/"                    element={<PaginaLogin />} />
+        <Route path="/painel"              element={<PaginaPainel />} />
+        <Route path="/baia/:numero"        element={<PaginaDetalhesPet />} />
+        <Route path="/cadastro"            element={<PaginaCadastroPet />} />
+        <Route path="/configuracoes"       element={<PaginaConfiguracoes />} />
+        <Route path="/usuarios"            element={<PaginaUsuarios />} />
+        <Route path="/relatorio/:id"       element={<PaginaRelatorio />} />
+        <Route path="/historico"           element={<PaginaHistorico />} />
       </Routes>
     </BrowserRouter>
   )
