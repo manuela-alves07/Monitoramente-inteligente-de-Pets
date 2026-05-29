@@ -23,6 +23,12 @@ export async function listarBaias() {
   return resposta.json()
 }
 
+export async function listarAnimais() {
+  const resposta = await fetch('/animais')
+  if (!resposta.ok) throw new Error('Erro ao buscar animais')
+  return resposta.json()
+}
+
 export async function cadastrarAnimal(dados) {
   const resposta = await fetch('/animais', {
     method: 'POST',
@@ -36,8 +42,28 @@ export async function cadastrarAnimal(dados) {
   return resposta.json()
 }
 
-export async function darBaixa(idAnimal) {
-  const resposta = await fetch(`/animais/${idAnimal}/baixa`, { method: 'POST' })
+export async function buscarAnimal(idAnimal) {
+  const resposta = await fetch(`/animais/${idAnimal}`)
+  if (!resposta.ok) throw new Error('Erro ao buscar animal')
+  return resposta.json()
+}
+
+export async function atualizarAnimal(idAnimal, dados) {
+  const resposta = await fetch(`/animais/${idAnimal}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados),
+  })
+  if (!resposta.ok) throw new Error('Erro ao atualizar animal')
+  return resposta.json()
+}
+
+export async function darBaixa(idAnimal, dadosAlta = {}) {
+  const resposta = await fetch(`/animais/${idAnimal}/baixa`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dadosAlta),
+  })
   if (!resposta.ok) throw new Error('Erro ao dar baixa')
   return resposta.json()
 }

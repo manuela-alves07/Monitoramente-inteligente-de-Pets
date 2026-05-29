@@ -100,11 +100,35 @@ def buscar_animal(id_animal):
         return cur.fetchone()
 
 
-def dar_baixa(id_animal):
+def atualizar_animal(id_animal, nome, especie, raca, tutor, telefone,
+                     idade, peso, motivo, diagnostico, medicamentos, alergias, veterinario):
     with cursor_dict() as (_, cur):
         cur.execute(
-            "UPDATE animal SET status_internacao = 'alta' WHERE id_animal = %s",
-            (id_animal,),
+            """UPDATE animal SET
+                nome=%s, especie=%s, raca=%s, tutor=%s, telefone=%s,
+                idade=%s, peso=%s, motivo=%s, diagnostico=%s,
+                medicamentos=%s, alergias=%s, veterinario=%s
+               WHERE id_animal=%s""",
+            (nome, especie, raca, tutor, telefone,
+             idade, peso, motivo, diagnostico, medicamentos, alergias, veterinario,
+             id_animal),
+        )
+
+
+def dar_baixa(id_animal, condicao_alta=None, diagnostico_final=None,
+              medicamentos_alta=None, instrucoes_alta=None, data_retorno=None):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            """UPDATE animal SET
+                status_internacao = 'alta',
+                data_alta = NOW(),
+                condicao_alta = %s,
+                diagnostico_final = %s,
+                medicamentos_alta = %s,
+                instrucoes_alta = %s,
+                data_retorno = %s
+               WHERE id_animal = %s""",
+            (condicao_alta, diagnostico_final, medicamentos_alta, instrucoes_alta, data_retorno, id_animal),
         )
 
 

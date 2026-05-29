@@ -11,10 +11,10 @@ function IconeOlho() {
 }
 
 const CORES_STATUS = {
-  comendo:     { cor: '#00d4c8', label: 'Comendo'     },
-  descansando: { cor: '#7a8ea8', label: 'Descansando' },
-  alerta:      { cor: '#ff8080', label: 'Alerta'      },
-  vazia:       { cor: '#2a3a50', label: 'Vazia'       },
+  comendo:    { cor: '#00d4c8', label: 'Comendo'                },
+  aguardando: { cor: '#4a6a8a', label: 'Aguardando monitoramento' },
+  alerta:     { cor: '#ff8080', label: 'Alerta'                 },
+  vazia:      { cor: '#2a3a50', label: 'Vazia'                  },
 }
 
 export default function CartaoBaia({ numero, pet, status, ultimaRefeicao, onVerDetalhes }) {

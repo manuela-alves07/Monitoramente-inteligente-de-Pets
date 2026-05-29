@@ -7,6 +7,7 @@ from flask_cors import CORS
 
 from banco.repositorio import (
     autenticar_usuario,
+    atualizar_animal,
     atualizar_senha_usuario,
     buscar_animal,
     dar_baixa,
@@ -85,11 +86,42 @@ def rota_buscar_animal(id_animal):
     return jsonify(serializar(animal))
 
 
+@app.route("/animais/<int:id_animal>", methods=["PUT"])
+def rota_atualizar_animal(id_animal):
+    if not buscar_animal(id_animal):
+        return jsonify({"erro": "Animal nao encontrado"}), 404
+    dados = request.json or {}
+    atualizar_animal(
+        id_animal,
+        nome=dados.get("nome"),
+        especie=dados.get("especie"),
+        raca=dados.get("raca"),
+        tutor=dados.get("tutor"),
+        telefone=dados.get("telefone"),
+        idade=dados.get("idade"),
+        peso=dados.get("peso"),
+        motivo=dados.get("motivo"),
+        diagnostico=dados.get("diagnostico"),
+        medicamentos=dados.get("medicamentos"),
+        alergias=dados.get("alergias"),
+        veterinario=dados.get("veterinario"),
+    )
+    return jsonify(serializar(buscar_animal(id_animal)))
+
+
 @app.route("/animais/<int:id_animal>/baixa", methods=["POST"])
 def rota_dar_baixa(id_animal):
     if not buscar_animal(id_animal):
         return jsonify({"erro": "Animal nao encontrado"}), 404
-    dar_baixa(id_animal)
+    dados = request.get_json(silent=True) or {}
+    dar_baixa(
+        id_animal,
+        condicao_alta=dados.get("condicao_alta"),
+        diagnostico_final=dados.get("diagnostico_final"),
+        medicamentos_alta=dados.get("medicamentos_alta"),
+        instrucoes_alta=dados.get("instrucoes_alta"),
+        data_retorno=dados.get("data_retorno") or None,
+    )
     return jsonify({"ok": True})
 
 
