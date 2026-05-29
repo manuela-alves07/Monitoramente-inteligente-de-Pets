@@ -1,5 +1,5 @@
 """
-RFC 40 – Monitoramento Veterinário com IA
+VetVision – Monitoramento Veterinário com IA
 Módulo: Métricas do Modelo
 
 Instalação:
@@ -23,7 +23,7 @@ from roboflow import Roboflow
 # ──────────────────────────────────────────────
 
 ROBOFLOW_API_KEY = "NNRaoXh6QTL5y7mXASsa"
-ROBOFLOW_MODEL   = "pi-liqod/1"
+ROBOFLOW_MODEL   = "pi-liqod/3"
 ROBOFLOW_URL     = f"https://serverless.roboflow.com/{ROBOFLOW_MODEL}"
 CONFIANCA_MINIMA = 0.40
 IOU_THRESHOLD    = 0.50
@@ -37,7 +37,7 @@ CLASSES = {0: "bowl", 1: "cat", 2: "dog"}
 print("[1/4] Baixando dataset do Roboflow...")
 rf = Roboflow(api_key=ROBOFLOW_API_KEY)
 project = rf.workspace("julias-workspace-phzrr").project("pi-liqod")
-version = project.version(1)
+version = project.version(3)
 dataset = version.download("yolov8-obb")
 
 TEST_IMG_DIR = Path(dataset.location) / "test" / "images"
