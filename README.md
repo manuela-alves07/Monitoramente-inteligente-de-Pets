@@ -58,6 +58,8 @@ Painel disponível em `http://localhost:5173`
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `GET` | `/baias` | Lista todas as baias com animais internados |
+| `POST` | `/baias` | Cria uma nova baia |
+| `DELETE` | `/baias/<id>` | Remove uma baia (somente se vazia) |
 | `GET` | `/animais` | Lista todos os animais |
 | `POST` | `/animais` | Cadastra um novo animal em uma baia |
 | `POST` | `/animais/<id>/baixa` | Dá alta a um animal e libera a baia |

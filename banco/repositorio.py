@@ -21,15 +21,20 @@ def inserir_camera(id_baia, ip_stream, status="online"):
         return cur.fetchone()["id_camera"]
 
 
-def inserir_animal(nome, especie, raca, tutor, id_baia, status_internacao="internado"):
+def inserir_animal(nome, especie, tutor, id_baia, raca=None, idade=None, peso=None,
+                   telefone=None, motivo=None, diagnostico=None, medicamentos=None,
+                   alergias=None, veterinario=None, status_internacao="internado"):
     with cursor_dict() as (_, cur):
         cur.execute(
             """
-            INSERT INTO animal (nome, especie, raca, tutor, id_baia, status_internacao)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO animal (nome, especie, raca, tutor, id_baia, status_internacao,
+                                idade, peso, telefone, motivo, diagnostico,
+                                medicamentos, alergias, veterinario)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id_animal
             """,
-            (nome, especie, raca, tutor, id_baia, status_internacao),
+            (nome, especie, raca, tutor, id_baia, status_internacao,
+             idade, peso, telefone, motivo, diagnostico, medicamentos, alergias, veterinario),
         )
         return cur.fetchone()["id_animal"]
 
@@ -129,6 +134,29 @@ def dar_baixa(id_animal, condicao_alta=None, diagnostico_final=None,
                 data_retorno = %s
                WHERE id_animal = %s""",
             (condicao_alta, diagnostico_final, medicamentos_alta, instrucoes_alta, data_retorno, id_animal),
+        )
+
+
+def criar_baia():
+    with cursor_dict() as (_, cur):
+        cur.execute("SELECT COALESCE(MAX(id_baia), 0) + 1 AS proximo FROM baia")
+        proximo = cur.fetchone()["proximo"]
+        numero = f"B-{proximo:02d}"
+        cur.execute(
+            "INSERT INTO baia (numero, localizacao, status) VALUES (%s, %s, 'livre') RETURNING id_baia, numero, localizacao, status",
+            (numero, f"Sala {proximo}"),
+        )
+        return cur.fetchone()
+
+
+def remover_baia(id_baia):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            """DELETE FROM baia WHERE id_baia = %s
+               AND NOT EXISTS (
+                 SELECT 1 FROM animal WHERE id_baia = %s AND status_internacao = 'internado'
+               )""",
+            (id_baia, id_baia),
         )
 
 
