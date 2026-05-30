@@ -11,7 +11,7 @@ function IconeOlho() {
 }
 
 const CORES_STATUS = {
-  comendo:    { cor: '#00d4c8', label: 'Comendo'                },
+  monitorado: { cor: '#00d4c8', label: 'Monitorado'             },
   aguardando: { cor: '#4a6a8a', label: 'Aguardando monitoramento' },
   alerta:     { cor: '#ff8080', label: 'Alerta'                 },
   vazia:      { cor: '#2a3a50', label: 'Vazia'                  },
@@ -40,7 +40,7 @@ export default function CartaoBaia({ numero, pet, status, ultimaRefeicao, onVerD
         ) : (
           <>
             <span className="baia-emoji">
-              {{ gato: '🐱', cachorro: '🐶', coelho: '🐰', passaro: '🐦' }[pet?.tipo] ?? '🐾'}
+              {{ gato: '🐱', cachorro: '🐶' }[pet?.tipo] ?? '🐾'}
             </span>
             <span className="baia-nome">{pet?.nome ?? 'Pet'}</span>
           </>

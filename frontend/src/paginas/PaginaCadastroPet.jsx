@@ -154,8 +154,6 @@ export default function PaginaCadastroPet() {
                 <select value={form.tipo} onChange={e => atualizar('tipo', e.target.value)}>
                   <option value="gato">Gato</option>
                   <option value="cachorro">Cachorro</option>
-                  <option value="coelho">Coelho</option>
-                  <option value="passaro">Pássaro</option>
                 </select>
               </div>
               <div className="campo">

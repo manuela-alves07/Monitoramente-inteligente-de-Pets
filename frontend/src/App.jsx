@@ -7,6 +7,7 @@ import PaginaConfiguracoes from './paginas/PaginaConfiguracoes'
 import PaginaUsuarios from './paginas/PaginaUsuarios'
 import PaginaRelatorio from './paginas/PaginaRelatorio'
 import PaginaHistorico from './paginas/PaginaHistorico'
+import PaginaPerfil from './paginas/PaginaPerfil'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/usuarios"            element={<PaginaUsuarios />} />
         <Route path="/relatorio/:id"       element={<PaginaRelatorio />} />
         <Route path="/historico"           element={<PaginaHistorico />} />
+        <Route path="/perfil"              element={<PaginaPerfil />} />
       </Routes>
     </BrowserRouter>
   )
