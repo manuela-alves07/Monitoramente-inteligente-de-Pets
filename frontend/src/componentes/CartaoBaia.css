@@ -84,7 +84,8 @@
 /* ── Rodapé ── */
 .baia-rodape {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
   margin-top: auto;
   padding-right: 48px;
 }

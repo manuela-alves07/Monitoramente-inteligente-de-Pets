@@ -175,6 +175,7 @@ export default function PaginaPainel() {
                 pet={baia.pet}
                 status={!baia.pet ? 'vazia' : (baia.ultimaRefeicao || baia.ultimaAgua) ? 'monitorado' : 'aguardando'}
                 ultimaRefeicao={baia.ultimaRefeicao}
+                ultimaAgua={baia.ultimaAgua}
                 onVerDetalhes={() => abrirDetalhesBaia(baia)}
               />
             ))}

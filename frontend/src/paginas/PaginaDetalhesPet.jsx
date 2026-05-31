@@ -24,7 +24,7 @@ function calcularTempoInternado(dataEntrada) {
 
 function formatarData(dataISO) {
   if (!dataISO) return '—'
-  const [ano, mes, dia] = dataISO.split('-')
+  const [ano, mes, dia] = dataISO.slice(0, 10).split('-')
   return `${dia}/${mes}/${ano}`
 }
 
@@ -171,6 +171,9 @@ export default function PaginaDetalhesPet() {
     try {
       const resultado = await analisarVideo(arquivo, baia?.pet?.id)
       setRelatorioLocal(resultado)
+      if (baia?.pet?.id) {
+        listarEventos(baia.pet.id).then(setEventosDB).catch(() => {})
+      }
     } catch {
       setErroAnalise('Erro ao analisar o vídeo. Verifique se o servidor está rodando.')
     } finally {

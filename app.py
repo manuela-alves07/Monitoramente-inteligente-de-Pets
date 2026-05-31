@@ -7,6 +7,7 @@ from flask_cors import CORS
 
 from banco.repositorio import (
     autenticar_usuario,
+    garantir_admin,
     atualizar_animal,
     atualizar_senha_usuario,
     buscar_animal,
@@ -37,6 +38,7 @@ PASTA_UPLOADS = Path("uploads")
 
 try:
     garantir_baias(6)
+    garantir_admin()
 except Exception as exc:
     print(f"[aviso] banco indisponivel ao iniciar: {exc}")
 
@@ -274,19 +276,12 @@ def analisar():
     caminho_video = PASTA_UPLOADS / video.filename
     video.save(caminho_video)
 
-    etapa1 = subprocess.run(
-        ["python3", "detectar_objetos.py", str(caminho_video)],
-        capture_output=True, text=True,
-    )
-    if etapa1.returncode != 0:
-        return jsonify({"erro": etapa1.stderr}), 500
-
-    etapa2 = subprocess.run(
+    analise = subprocess.run(
         ["python3", "analisar_comportamento.py", str(caminho_video)],
         capture_output=True, text=True,
     )
-    if etapa2.returncode != 0:
-        return jsonify({"erro": etapa2.stderr}), 500
+    if analise.returncode != 0:
+        return jsonify({"erro": analise.stderr}), 500
 
     relatorios = sorted(
         PASTA_RELATORIOS.glob("relatorio_*.json"),
@@ -309,6 +304,13 @@ def analisar():
                     origem_camera=None,
                     tipo_evento="refeicao",
                     confianca_ia=ref.get("confianca"),
+                )
+            for beb in relatorio.get("hidratacoes", []):
+                inserir_evento(
+                    id_animal=id_animal,
+                    origem_camera=None,
+                    tipo_evento="agua",
+                    confianca_ia=beb.get("confianca"),
                 )
             for alerta in relatorio.get("alertas", []):
                 inserir_alerta(
