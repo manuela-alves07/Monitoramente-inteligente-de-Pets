@@ -14,7 +14,7 @@ function IconeVoltar() {
 
 function calcularTempoInternado(dataEntrada) {
   if (!dataEntrada) return '—'
-  const entrada = new Date(dataEntrada + 'T00:00:00')
+  const entrada = new Date(dataEntrada.slice(0, 10) + 'T00:00:00')
   const hoje    = new Date()
   const dias    = Math.floor((hoje - entrada) / (1000 * 60 * 60 * 24))
   if (dias === 0) return 'Hoje'
