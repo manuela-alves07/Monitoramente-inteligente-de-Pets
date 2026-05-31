@@ -40,7 +40,7 @@ def inserir_animal(nome, especie, tutor, id_baia, raca=None, idade=None, peso=No
 
 
 def inserir_evento(id_animal, origem_camera, tipo_evento, confianca_ia=None, quando=None):
-    quando = quando or datetime.now()
+    quando = quando or datetime.utcnow()
     with cursor_dict() as (_, cur):
         cur.execute(
             """
@@ -211,6 +211,16 @@ def listar_eventos(id_animal=None, limite=50):
     with cursor_dict() as (_, cur):
         cur.execute(sql, params)
         return cur.fetchall()
+
+
+def garantir_admin():
+    with cursor_dict() as (_, cur):
+        cur.execute("SELECT id_usuario FROM usuario WHERE email = 'admin'")
+        if not cur.fetchone():
+            cur.execute(
+                """INSERT INTO usuario (nome, email, senha_hash, perfil, id_clinica)
+                   VALUES ('Administrador', 'admin', 'admin123', 'admin', 1)""",
+            )
 
 
 def autenticar_usuario(login, senha):

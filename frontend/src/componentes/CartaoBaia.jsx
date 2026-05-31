@@ -17,7 +17,7 @@ const CORES_STATUS = {
   vazia:      { cor: '#2a3a50', label: 'Vazia'                  },
 }
 
-export default function CartaoBaia({ numero, pet, status, ultimaRefeicao, onVerDetalhes }) {
+export default function CartaoBaia({ numero, pet, status, ultimaRefeicao, ultimaAgua, onVerDetalhes }) {
   const vazia   = status === 'vazia'
   const config  = CORES_STATUS[status] ?? CORES_STATUS.vazia
 
@@ -51,6 +51,9 @@ export default function CartaoBaia({ numero, pet, status, ultimaRefeicao, onVerD
         <div className="baia-rodape">
           <span className="baia-ultima">
             Última refeição: <strong>{ultimaRefeicao ?? '—'}</strong>
+          </span>
+          <span className="baia-ultima">
+            Última água: <strong>{ultimaAgua ?? '—'}</strong>
           </span>
         </div>
       )}
