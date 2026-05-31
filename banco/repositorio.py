@@ -1,6 +1,8 @@
+import json
 from datetime import datetime
 
 from banco.database import cursor_dict
+from banco import senhas
 
 
 def inserir_baia(numero, localizacao, status="livre"):
@@ -193,11 +195,17 @@ def listar_eventos(id_animal=None, limite=50):
 
 def autenticar_usuario(login, senha):
     with cursor_dict() as (_, cur):
-        cur.execute(
-            "SELECT * FROM usuario WHERE email = %s AND senha_hash = %s",
-            (login, senha),
-        )
-        return cur.fetchone()
+        cur.execute("SELECT * FROM usuario WHERE email = %s", (login,))
+        user = cur.fetchone()
+    if not user:
+        return None
+    armazenada = user.get("senha_hash") or ""
+    if senhas.parece_hash(armazenada):
+        return user if senhas.conferir(senha, armazenada) else None
+    if armazenada == senha:
+        atualizar_senha_usuario(user["id_usuario"], senha)
+        return user
+    return None
 
 
 def listar_usuarios():
@@ -213,7 +221,7 @@ def inserir_usuario(nome, login, senha, role="user"):
         cur.execute(
             """INSERT INTO usuario (nome, email, senha_hash, perfil, id_clinica)
                VALUES (%s, %s, %s, %s, 1) RETURNING id_usuario""",
-            (nome, login, senha, role),
+            (nome, login, senhas.gerar_hash(senha), role),
         )
         return cur.fetchone()["id_usuario"]
 
@@ -230,8 +238,26 @@ def atualizar_senha_usuario(id_usuario, nova_senha):
     with cursor_dict() as (_, cur):
         cur.execute(
             "UPDATE usuario SET senha_hash = %s WHERE id_usuario = %s",
-            (nova_senha, id_usuario),
+            (senhas.gerar_hash(nova_senha), id_usuario),
         )
+
+
+def migrar_senhas_em_texto():
+    with cursor_dict() as (_, cur):
+        cur.execute("SELECT id_usuario, senha_hash FROM usuario")
+        usuarios = cur.fetchall()
+        convertidas = 0
+        for u in usuarios:
+            atual = u.get("senha_hash") or ""
+            if senhas.parece_hash(atual):
+                continue
+            novo = senhas.gerar_hash(atual)
+            cur.execute(
+                "UPDATE usuario SET senha_hash = %s WHERE id_usuario = %s",
+                (novo, u["id_usuario"]),
+            )
+            convertidas += 1
+        return convertidas
 
 
 def listar_alertas_abertos():
@@ -245,3 +271,117 @@ def listar_alertas_abertos():
             """
         )
         return cur.fetchall()
+
+
+def padronizar_tipos_evento():
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            "UPDATE evento SET tipo_evento = 'refeicao' WHERE tipo_evento = 'comendo'"
+        )
+        return cur.rowcount
+
+
+def garantir_tabela_relatorio():
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS relatorio_analise (
+                id_relatorio SERIAL PRIMARY KEY,
+                id_animal    INTEGER NOT NULL REFERENCES animal(id_animal) ON DELETE CASCADE,
+                data         DATE NOT NULL,
+                gerado_em    TIMESTAMP NOT NULL DEFAULT NOW(),
+                dados        JSONB NOT NULL
+            )
+            """
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_rel_animal_data ON relatorio_analise (id_animal, data DESC)"
+        )
+
+
+def inserir_relatorio(id_animal, dados):
+    agora = datetime.now()
+    data = dados.get("data") or agora.strftime("%Y-%m-%d")
+    gerado_em = dados.get("gerado_em") or agora.strftime("%Y-%m-%d %H:%M:%S")
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            """INSERT INTO relatorio_analise (id_animal, data, gerado_em, dados)
+               VALUES (%s, %s, %s, %s::jsonb) RETURNING id_relatorio, gerado_em""",
+            (id_animal, data, gerado_em, json.dumps(dados, ensure_ascii=False)),
+        )
+        return cur.fetchone()
+
+
+def buscar_relatorio_animal(id_animal, data=None, id_relatorio=None):
+    if id_relatorio:
+        sql = "SELECT dados FROM relatorio_analise WHERE id_animal = %s AND id_relatorio = %s"
+        params = [id_animal, id_relatorio]
+    else:
+        sql = "SELECT dados FROM relatorio_analise WHERE id_animal = %s"
+        params = [id_animal]
+        if data:
+            sql += " AND data = %s"
+            params.append(data)
+        sql += " ORDER BY gerado_em DESC LIMIT 1"
+    with cursor_dict() as (_, cur):
+        cur.execute(sql, params)
+        linha = cur.fetchone()
+        return linha["dados"] if linha else None
+
+
+def importar_relatorios_de_arquivos(pasta):
+    from pathlib import Path
+    pasta = Path(pasta)
+    if not pasta.exists():
+        return 0
+    importados = 0
+    with cursor_dict() as (_, cur):
+        for arquivo in sorted(pasta.glob("relatorio_animal_*.json")):
+            try:
+                with open(arquivo, encoding="utf-8") as f:
+                    dados = json.load(f)
+            except (OSError, json.JSONDecodeError):
+                continue
+            id_animal = dados.get("id_animal")
+            gerado_em = dados.get("gerado_em")
+            data = dados.get("data") or datetime.now().strftime("%Y-%m-%d")
+            if not id_animal or not gerado_em:
+                continue
+            cur.execute(
+                "SELECT 1 FROM relatorio_analise WHERE id_animal = %s AND gerado_em = %s",
+                (id_animal, gerado_em),
+            )
+            if cur.fetchone():
+                continue
+            cur.execute(
+                """INSERT INTO relatorio_analise (id_animal, data, gerado_em, dados)
+                   VALUES (%s, %s, %s, %s::jsonb)""",
+                (id_animal, data, gerado_em, json.dumps(dados, ensure_ascii=False)),
+            )
+            importados += 1
+    return importados
+
+
+def listar_relatorios_animal(id_animal):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            """
+            SELECT id_relatorio, data, gerado_em, dados
+            FROM relatorio_analise
+            WHERE id_animal = %s
+            ORDER BY gerado_em DESC
+            """,
+            (id_animal,),
+        )
+        linhas = cur.fetchall()
+    resumo = []
+    for l in linhas:
+        d = l["dados"] or {}
+        resumo.append({
+            "id_relatorio": l["id_relatorio"],
+            "data": l["data"].isoformat() if hasattr(l["data"], "isoformat") else l["data"],
+            "gerado_em": l["gerado_em"].strftime("%Y-%m-%d %H:%M:%S") if l["gerado_em"] else None,
+            "refeicoes_confirmadas": d.get("refeicoes_confirmadas", 0),
+            "total_alertas": len(d.get("alertas", [])),
+        })
+    return resumo

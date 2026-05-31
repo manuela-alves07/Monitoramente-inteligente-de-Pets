@@ -304,6 +304,47 @@
   border-color: rgba(0, 212, 200, 0.6);
 }
 
+.filtro-data-relatorio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 4px;
+  flex-wrap: wrap;
+}
+
+.filtro-data-relatorio label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.filtro-data-relatorio select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 212, 200, 0.3);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.filtro-data-relatorio select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.filtro-data-relatorio select:focus {
+  outline: none;
+  border-color: rgba(0, 212, 200, 0.7);
+}
+
+.filtro-vazio {
+  font-size: 12px;
+  color: #ffae66;
+  font-style: italic;
+}
+
 /* Modal de Alta */
 .modal-overlay {
   position: fixed;

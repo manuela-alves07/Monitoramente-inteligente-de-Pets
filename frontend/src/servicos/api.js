@@ -1,19 +1,12 @@
-export async function buscarRelatorios() {
-  const resposta = await fetch('/relatorios')
-  return resposta.json()
-}
-
-export async function buscarRelatorio(nome) {
-  const resposta = await fetch(`/relatorios/${nome}`)
-  return resposta.json()
-}
-
 export async function analisarVideo(arquivo, idAnimal) {
   const form = new FormData()
   form.append('video', arquivo)
   if (idAnimal) form.append('id_animal', idAnimal)
   const resposta = await fetch('/analisar', { method: 'POST', body: form })
-  if (!resposta.ok) throw new Error('Erro na análise')
+  if (!resposta.ok) {
+    const body = await resposta.json().catch(() => ({}))
+    throw new Error(body.erro || 'Erro na análise')
+  }
   return resposta.json()
 }
 
@@ -131,5 +124,21 @@ export async function atualizarSenha(idUsuario, senha) {
 export async function listarEventos(idAnimal) {
   const resposta = await fetch(`/animais/${idAnimal}/eventos`)
   if (!resposta.ok) throw new Error('Erro ao buscar eventos')
+  return resposta.json()
+}
+
+export async function buscarRelatorioAnimal(idAnimal, { data, id } = {}) {
+  let url = `/animais/${idAnimal}/relatorio`
+  if (id)        url += `?id=${id}`
+  else if (data) url += `?data=${encodeURIComponent(data)}`
+  const resposta = await fetch(url)
+  if (resposta.status === 404) return null
+  if (!resposta.ok) throw new Error('Erro ao buscar relatório do animal')
+  return resposta.json()
+}
+
+export async function listarRelatoriosAnimal(idAnimal) {
+  const resposta = await fetch(`/animais/${idAnimal}/relatorios`)
+  if (!resposta.ok) throw new Error('Erro ao listar relatórios')
   return resposta.json()
 }

@@ -279,12 +279,14 @@ if not eventos:
         "nivel":    "aviso",
     })
 
-os.makedirs("relatorios", exist_ok=True)
-nome_arquivo = f"relatorios/relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-with open(nome_arquivo, "w", encoding="utf-8") as f:
-    json.dump(relatorio, f, ensure_ascii=False, indent=2)
-
-print(f"\nVídeo salvo  : {SAIDA}")
-print(f"Relatório    : {nome_arquivo}")
-if not MODO_API:
+if MODO_API:
+    print("===RELATORIO_JSON===")
+    print(json.dumps(relatorio, ensure_ascii=False))
+else:
+    os.makedirs("relatorios", exist_ok=True)
+    nome_arquivo = f"relatorios/relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(nome_arquivo, "w", encoding="utf-8") as f:
+        json.dump(relatorio, f, ensure_ascii=False, indent=2)
+    print(f"\nVídeo salvo  : {SAIDA}")
+    print(f"Relatório    : {nome_arquivo}")
     input("\nPressione Enter para fechar...")

@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_file
@@ -10,17 +11,23 @@ from banco.repositorio import (
     atualizar_animal,
     atualizar_senha_usuario,
     buscar_animal,
+    buscar_relatorio_animal,
     criar_baia,
     dar_baixa,
     garantir_baias,
+    garantir_tabela_relatorio,
     inserir_animal,
     inserir_evento,
     inserir_alerta,
+    inserir_relatorio,
     inserir_usuario,
     listar_animais,
     listar_baias,
     listar_eventos,
+    listar_relatorios_animal,
     listar_usuarios,
+    migrar_senhas_em_texto,
+    padronizar_tipos_evento,
     remover_baia,
     remover_usuario,
 )
@@ -28,13 +35,19 @@ from banco.repositorio import (
 app = Flask(__name__)
 CORS(app)
 
-PASTA_RELATORIOS = Path("relatorios")
 PASTA_EXEMPLOS = Path("exemplos")
 PASTA_UPLOADS = Path("uploads")
 
 
 try:
     garantir_baias(6)
+    garantir_tabela_relatorio()
+    convertidas = migrar_senhas_em_texto()
+    if convertidas:
+        print(f"[migracao] {convertidas} senha(s) em texto convertidas para hash")
+    ajustados = padronizar_tipos_evento()
+    if ajustados:
+        print(f"[migracao] {ajustados} evento(s) 'comendo' renomeados para 'refeicao'")
 except Exception as exc:
     print(f"[aviso] banco indisponivel ao iniciar: {exc}")
 
@@ -198,23 +211,19 @@ def rota_atualizar_senha(id_usuario):
     return jsonify({"ok": True})
 
 
-@app.route("/relatorios", methods=["GET"])
-def listar_relatorios():
-    arquivos = sorted(
-        PASTA_RELATORIOS.glob("relatorio_*.json"),
-        key=lambda f: f.stat().st_mtime,
-        reverse=True,
-    )
-    return jsonify([f.name for f in arquivos])
-
-
-@app.route("/relatorios/<nome>", methods=["GET"])
-def buscar_relatorio(nome):
-    caminho = PASTA_RELATORIOS / nome
-    if not caminho.exists():
+@app.route("/animais/<int:id_animal>/relatorio", methods=["GET"])
+def rota_buscar_relatorio_animal(id_animal):
+    id_relatorio = request.args.get("id", type=int)
+    data_filtro = request.args.get("data")
+    dados = buscar_relatorio_animal(id_animal, data_filtro, id_relatorio)
+    if not dados:
         return jsonify({"erro": "Relatório não encontrado"}), 404
-    with open(caminho, encoding="utf-8") as f:
-        return jsonify(json.load(f))
+    return jsonify(dados)
+
+
+@app.route("/animais/<int:id_animal>/relatorios", methods=["GET"])
+def rota_listar_relatorios_animal(id_animal):
+    return jsonify(listar_relatorios_animal(id_animal))
 
 
 @app.route("/video/<nome>", methods=["GET"])
@@ -237,34 +246,36 @@ def analisar():
     video.save(caminho_video)
 
     etapa1 = subprocess.run(
-        ["python3", "detectar_objetos.py", str(caminho_video)],
+        [sys.executable, "detectar_objetos.py", str(caminho_video)],
         capture_output=True, text=True,
     )
     if etapa1.returncode != 0:
-        return jsonify({"erro": etapa1.stderr}), 500
+        return jsonify({"erro": etapa1.stderr or etapa1.stdout or "Falha na detecao"}), 500
 
     etapa2 = subprocess.run(
-        ["python3", "analisar_comportamento.py", str(caminho_video)],
+        [sys.executable, "analisar_comportamento.py", str(caminho_video)],
         capture_output=True, text=True,
     )
     if etapa2.returncode != 0:
-        return jsonify({"erro": etapa2.stderr}), 500
+        return jsonify({"erro": etapa2.stderr or etapa2.stdout or "Falha na analise"}), 500
 
-    relatorios = sorted(
-        PASTA_RELATORIOS.glob("relatorio_*.json"),
-        key=lambda f: f.stat().st_mtime,
-        reverse=True,
-    )
-    if not relatorios:
-        return jsonify({"erro": "Relatório não gerado"}), 500
+    marcador = "===RELATORIO_JSON==="
+    if marcador not in etapa2.stdout:
+        return jsonify({"erro": "Relatório não gerado pelo script de análise"}), 500
+    linha_json = etapa2.stdout.split(marcador, 1)[1].strip().splitlines()[0]
+    try:
+        relatorio = json.loads(linha_json)
+    except json.JSONDecodeError as exc:
+        return jsonify({"erro": f"Saida do analisador invalida: {exc}"}), 500
 
-    with open(relatorios[0], encoding="utf-8") as f:
-        relatorio = json.load(f)
-
-    id_animal = request.form.get("id_animal")
-    if id_animal:
+    id_animal_raw = request.form.get("id_animal")
+    if id_animal_raw:
         try:
-            id_animal = int(id_animal)
+            id_animal = int(id_animal_raw)
+            relatorio["id_animal"] = id_animal
+
+            inserir_relatorio(id_animal, relatorio)
+
             for ref in relatorio.get("refeicoes", []):
                 inserir_evento(
                     id_animal=id_animal,
@@ -285,4 +296,5 @@ def analisar():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    # use_reloader=False evita reinicio no meio da analise de video
+    app.run(debug=True, port=5000, use_reloader=False)

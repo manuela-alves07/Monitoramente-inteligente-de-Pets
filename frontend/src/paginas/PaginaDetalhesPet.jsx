@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { analisarVideo, atualizarAnimal, buscarAnimal, darBaixa, listarEventos } from '../servicos/api'
+import { analisarVideo, atualizarAnimal, buscarAnimal, buscarRelatorioAnimal, darBaixa, listarEventos, listarRelatoriosAnimal } from '../servicos/api'
 import './PaginaDetalhesPet.css'
 
 function IconeVoltar() {
@@ -14,7 +14,7 @@ function IconeVoltar() {
 
 function calcularTempoInternado(dataEntrada) {
   if (!dataEntrada) return '—'
-  const entrada = new Date(dataEntrada + 'T00:00:00')
+  const entrada = new Date(dataEntrada)
   const hoje    = new Date()
   const dias    = Math.floor((hoje - entrada) / (1000 * 60 * 60 * 24))
   if (dias === 0) return 'Hoje'
@@ -24,8 +24,7 @@ function calcularTempoInternado(dataEntrada) {
 
 function formatarData(dataISO) {
   if (!dataISO) return '—'
-  const [ano, mes, dia] = dataISO.split('-')
-  return `${dia}/${mes}/${ano}`
+  return new Date(dataISO).toLocaleDateString('pt-BR')
 }
 
 export default function PaginaDetalhesPet() {
@@ -52,6 +51,9 @@ export default function PaginaDetalhesPet() {
   })
   const [erroAlta, setErroAlta]             = useState('')
   const [eventosDB, setEventosDB]           = useState([])
+  const [listaRelatorios, setListaRelatorios] = useState([])
+  const [relatorioSelecionado, setRelatorioSelecionado] = useState(null)
+  const [periodoFiltro, setPeriodoFiltro]   = useState('todos')
   const [modalEdicao, setModalEdicao]       = useState(false)
   const [formEdicao, setFormEdicao]         = useState({})
   const [salvandoEdicao, setSalvandoEdicao] = useState(false)
@@ -67,8 +69,38 @@ export default function PaginaDetalhesPet() {
     if (baia?.pet?.id) {
       buscarAnimal(baia.pet.id).then(setPetCompleto).catch(() => {})
       listarEventos(baia.pet.id).then(setEventosDB).catch(() => {})
+
+      const chaveCache = `relatorio-animal-${baia.pet.id}`
+      if (!relatorioLocal) {
+        const cache = localStorage.getItem(chaveCache)
+        if (cache) {
+          try { setRelatorioLocal(JSON.parse(cache)) } catch { /* cache corrompido */ }
+        }
+      }
+
+      listarRelatoriosAnimal(baia.pet.id)
+        .then(lista => {
+          setListaRelatorios(lista)
+          if (lista.length > 0 && !relatorioSelecionado) {
+            setRelatorioSelecionado(lista[0].id_relatorio)
+          }
+        })
+        .catch(() => {})
     }
   }, [baia?.pet?.id])
+
+  useEffect(() => {
+    if (!baia?.pet?.id) return
+    if (!relatorioSelecionado) {
+      buscarRelatorioAnimal(baia.pet.id)
+        .then(r => r && setRelatorioLocal(r))
+        .catch(() => {})
+      return
+    }
+    buscarRelatorioAnimal(baia.pet.id, { id: relatorioSelecionado })
+      .then(r => setRelatorioLocal(r))
+      .catch(() => {})
+  }, [baia?.pet?.id, relatorioSelecionado])
 
   function salvarObservacoes() {
     localStorage.setItem(chaveStorage, observacoes)
@@ -146,10 +178,20 @@ export default function PaginaDetalhesPet() {
     try {
       const resultado = await analisarVideo(arquivo, baia?.pet?.id)
       setRelatorioLocal(resultado)
-    } catch {
-      setErroAnalise('Erro ao analisar o vídeo. Verifique se o servidor está rodando.')
+      if (baia?.pet?.id) {
+        localStorage.setItem(`relatorio-animal-${baia.pet.id}`, JSON.stringify(resultado))
+        listarRelatoriosAnimal(baia.pet.id)
+          .then(lista => {
+            setListaRelatorios(lista)
+            if (lista.length > 0) setRelatorioSelecionado(lista[0].id_relatorio)
+          })
+          .catch(() => {})
+      }
+    } catch (err) {
+      setErroAnalise(err.message || 'Erro ao analisar o vídeo.')
     } finally {
       setAnalisando(false)
+      e.target.value = ''
     }
   }
 
@@ -185,7 +227,20 @@ export default function PaginaDetalhesPet() {
 
   const pet      = baia.pet
   const dados    = petCompleto ?? pet
-  const refeicoes = relatorioLocal?.refeicoes ?? []
+
+  function periodoDoHorario(horario) {
+    if (!horario) return null
+    const hora = Number(horario.slice(0, 2))
+    if (hora >= 6  && hora < 12) return 'manha'
+    if (hora >= 12 && hora < 18) return 'tarde'
+    return 'noite'
+  }
+
+  const refeicoesTodas = relatorioLocal?.refeicoes ?? []
+  const refeicoes = periodoFiltro === 'todos'
+    ? refeicoesTodas
+    : refeicoesTodas.filter(r => periodoDoHorario(r.inicio) === periodoFiltro)
+
   const ultimaAlimentacao = refeicoes.length > 0 ? refeicoes[refeicoes.length - 1].inicio : '—'
   const duracaoTotal = refeicoes.reduce((soma, r) => soma + r.duracao_s, 0)
 
@@ -288,6 +343,39 @@ export default function PaginaDetalhesPet() {
               {analisando ? 'Analisando...' : 'Analisar vídeo'}
             </button>
           </div>
+
+          {listaRelatorios.length > 0 && (
+            <div className="filtro-data-relatorio">
+              <label htmlFor="filtro-relatorio">Análise:</label>
+              <select
+                id="filtro-relatorio"
+                value={relatorioSelecionado ?? ''}
+                onChange={e => setRelatorioSelecionado(Number(e.target.value))}
+              >
+                {listaRelatorios.map(item => {
+                  const hora = item.gerado_em?.slice(11, 16) ?? ''
+                  return (
+                    <option key={item.id_relatorio} value={item.id_relatorio}>
+                      {formatarData(item.data)} {hora} · {item.refeicoes_confirmadas} refeição(ões)
+                    </option>
+                  )
+                })}
+              </select>
+
+              <label htmlFor="filtro-periodo">Período:</label>
+              <select
+                id="filtro-periodo"
+                value={periodoFiltro}
+                onChange={e => setPeriodoFiltro(e.target.value)}
+              >
+                <option value="todos">Todos ({refeicoesTodas.length})</option>
+                <option value="manha">Manhã 06h–12h ({refeicoesTodas.filter(r => periodoDoHorario(r.inicio) === 'manha').length})</option>
+                <option value="tarde">Tarde 12h–18h ({refeicoesTodas.filter(r => periodoDoHorario(r.inicio) === 'tarde').length})</option>
+                <option value="noite">Noite 18h–06h ({refeicoesTodas.filter(r => periodoDoHorario(r.inicio) === 'noite').length})</option>
+              </select>
+            </div>
+          )}
+
           {erroAnalise && <p className="erro-analise">{erroAnalise}</p>}
           <div className="detalhes-atividades">
             <div className="atividade-item">
