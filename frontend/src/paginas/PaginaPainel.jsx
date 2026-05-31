@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MenuLateral from '../componentes/MenuLateral'
 import CartaoBaia from '../componentes/CartaoBaia'
-import { listarBaias } from '../servicos/api'
+import { fecharAlerta, listarBaias } from '../servicos/api'
 import './PaginaPainel.css'
 
 function IconeMenu() {
@@ -47,8 +47,11 @@ function mapearBaia(b) {
     id_baia:        b.id_baia,
     numero:         b.numero,
     temDados:       false,
-    ultimaRefeicao: formatarHora(b.ultima_refeicao),
-    ultimaAgua:     formatarHora(b.ultima_agua),
+    ultimaRefeicao:   formatarHora(b.ultima_refeicao),
+    ultimaAgua:       formatarHora(b.ultima_agua),
+    temAlerta:        b.tem_alerta ?? false,
+    descricaoAlerta:  b.descricao_alerta ?? null,
+    idAlerta:         b.id_alerta ?? null,
     pet: temPet ? {
       id:          b.id_animal,
       nome:        b.nome,
@@ -73,6 +76,7 @@ export default function PaginaPainel() {
   const [baias, setBaias]                   = useState([])
   const [carregando, setCarregando]         = useState(true)
   const [config]                            = useState(carregarConfig)
+  const [modalAlerta, setModalAlerta]       = useState(null)
   const navegar = useNavigate()
 
   const nomeUsuario = localStorage.getItem('vetvision-usuario') ?? 'Usuário'
@@ -100,9 +104,21 @@ export default function PaginaPainel() {
   }, [])
 
   function abrirDetalhesBaia(baia) {
-    navegar(`/baia/${baia.numero}`, {
-      state: { baia, relatorio: null },
-    })
+    if (baia.temAlerta) {
+      setModalAlerta(baia)
+      return
+    }
+    navegar(`/baia/${baia.numero}`, { state: { baia, relatorio: null } })
+  }
+
+  async function confirmarFecharAlerta(baia) {
+    if (baia.idAlerta) await fecharAlerta(baia.idAlerta)
+    setBaias(prev => prev.map(b =>
+      b.id_baia === baia.id_baia
+        ? { ...b, temAlerta: false, descricaoAlerta: null, idAlerta: null }
+        : b
+    ))
+    setModalAlerta(null)
   }
 
   return (
@@ -148,6 +164,27 @@ export default function PaginaPainel() {
       {menuAberto && (
         <div className="overlay-menu" onClick={() => setMenuAberto(false)} />
       )}
+
+      {modalAlerta && (
+        <div className="overlay-menu" onClick={() => setModalAlerta(null)} style={{ zIndex: 50 }}>
+          <div className="modal-alerta-painel" onClick={e => e.stopPropagation()}>
+            <div className="modal-alerta-icone">⚠️</div>
+            <h2>{modalAlerta.pet?.nome}</h2>
+            <p>{modalAlerta.descricaoAlerta}</p>
+            <div className="modal-alerta-acoes">
+              <button className="modal-alerta-btn-secundario" onClick={() => {
+                setModalAlerta(null)
+                navegar(`/baia/${modalAlerta.numero}`, { state: { baia: modalAlerta, relatorio: null } })
+              }}>
+                Ver detalhes
+              </button>
+              <button className="modal-alerta-btn-fechar" onClick={() => confirmarFecharAlerta(modalAlerta)}>
+                Ciente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {dropdownAberto && (
         <div className="overlay-menu overlay-menu--transparente" onClick={() => setDropdownAberto(false)} />
       )}
@@ -173,7 +210,7 @@ export default function PaginaPainel() {
                 key={baia.numero}
                 numero={baia.numero}
                 pet={baia.pet}
-                status={!baia.pet ? 'vazia' : (baia.ultimaRefeicao || baia.ultimaAgua) ? 'monitorado' : 'aguardando'}
+                status={!baia.pet ? 'vazia' : baia.temAlerta ? 'alerta' : (baia.ultimaRefeicao || baia.ultimaAgua) ? 'monitorado' : 'aguardando'}
                 ultimaRefeicao={baia.ultimaRefeicao}
                 ultimaAgua={baia.ultimaAgua}
                 onVerDetalhes={() => abrirDetalhesBaia(baia)}

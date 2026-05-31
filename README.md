@@ -1,6 +1,6 @@
 # VetVision — Monitoramento Inteligente de Pets
 
-Sistema de monitoramento de animais internados em clínicas veterinárias com detecção de comportamento alimentar via IA (YOLOv8).
+Sistema de monitoramento de animais internados em clínicas veterinárias com detecção de comportamento via IA.
 
 ---
 
@@ -9,7 +9,7 @@ Sistema de monitoramento de animais internados em clínicas veterinárias com de
 - **Frontend:** React 19 + Vite
 - **Backend:** Flask (Python)
 - **Banco de dados:** PostgreSQL (Neon)
-- **IA:** YOLOv8 (Ultralytics) + OpenCV
+- **IA:** Roboflow (modelo treinado com YOLOv8) + OpenCV + tracker de centroide
 
 ---
 
@@ -61,18 +61,24 @@ Painel disponível em `http://localhost:5173`
 | `POST` | `/baias` | Cria uma nova baia |
 | `DELETE` | `/baias/<id>` | Remove uma baia (somente se vazia) |
 | `GET` | `/animais` | Lista todos os animais |
-| `POST` | `/animais` | Cadastra um novo animal em uma baia |
-| `POST` | `/animais/<id>/baixa` | Dá alta a um animal e libera a baia |
+| `POST` | `/animais` | Cadastra um novo animal |
+| `PUT` | `/animais/<id>` | Atualiza dados do animal |
+| `POST` | `/animais/<id>/baixa` | Dá alta ao animal |
+| `POST` | `/animais/<id>/transferir` | Transfere animal para outra baia |
+| `PUT` | `/animais/<id>/observacoes` | Salva observações clínicas |
 | `GET` | `/animais/<id>/eventos` | Lista eventos de um animal |
 | `GET` | `/usuarios` | Lista usuários cadastrados |
 | `POST` | `/usuarios` | Cadastra um novo usuário |
 | `POST` | `/usuarios/login` | Autentica um usuário |
-| `PUT` | `/usuarios/<id>/senha` | Atualiza a senha de um usuário |
+| `PUT` | `/usuarios/<id>/senha` | Atualiza senha (admin) |
+| `PUT` | `/usuarios/me/senha` | Troca a própria senha |
 | `DELETE` | `/usuarios/<id>` | Remove um usuário |
-| `POST` | `/analisar` | Recebe um vídeo e retorna relatório de alimentação |
-| `GET` | `/relatorios` | Lista os relatórios gerados |
-| `GET` | `/relatorios/<nome>` | Retorna um relatório em JSON |
-| `GET` | `/video/<nome>` | Retorna um vídeo analisado |
+| `GET` | `/alertas` | Lista alertas clínicos abertos com nome do animal |
+| `POST` | `/alertas/<id>/fechar` | Marca um alerta como resolvido |
+| `GET` | `/animais/<id>/alertas` | Lista todos os alertas de um animal (histórico) |
+| `POST` | `/analisar` | Recebe vídeo, analisa comportamento e salva eventos |
+| `GET` | `/relatorios` | Lista relatórios gerados |
+| `GET` | `/relatorios/<nome>` | Retorna relatório em JSON |
 
 ---
 
@@ -80,9 +86,7 @@ Painel disponível em `http://localhost:5173`
 
 ```
 ├── app.py                    # API Flask
-├── detectar_objetos.py       # Detecção com YOLOv8
-├── analisar_comportamento.py # Análise de comportamento alimentar
-├── alertas.py                # Geração de alertas
+├── analisar_comportamento.py # Detecção via Roboflow + tracker + lógica de comportamento
 ├── requirements.txt
 ├── .env                      # Credenciais do banco (não commitado)
 ├── banco/
@@ -90,5 +94,14 @@ Painel disponível em `http://localhost:5173`
 │   └── repositorio.py        # Funções de acesso ao banco
 ├── exemplos/                 # Vídeos de exemplo
 ├── relatorios/               # Relatórios JSON gerados
+├── uploads/                  # Vídeos enviados pelo sistema
 └── frontend/                 # React + Vite
 ```
+
+---
+
+## Usuário padrão
+
+| Login | Senha | Perfil |
+|-------|-------|--------|
+| admin | admin123 | Administrador |

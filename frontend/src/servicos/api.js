@@ -151,6 +151,24 @@ export async function salvarObservacoes(idAnimal, observacoes) {
   return resposta.json()
 }
 
+export async function listarAlertasAnimal(idAnimal) {
+  const resposta = await fetch(`/animais/${idAnimal}/alertas`)
+  if (!resposta.ok) throw new Error('Erro ao buscar alertas')
+  return resposta.json()
+}
+
+export async function listarAlertas() {
+  const resposta = await fetch('/alertas')
+  if (!resposta.ok) throw new Error('Erro ao buscar alertas')
+  return resposta.json()
+}
+
+export async function fecharAlerta(idAlerta) {
+  const resposta = await fetch(`/alertas/${idAlerta}/fechar`, { method: 'POST' })
+  if (!resposta.ok) throw new Error('Erro ao fechar alerta')
+  return resposta.json()
+}
+
 export async function transferirBaia(idAnimal, idBaia) {
   const resposta = await fetch(`/animais/${idAnimal}/transferir`, {
     method: 'POST',

@@ -56,6 +56,10 @@ def inserir_evento(id_animal, origem_camera, tipo_evento, confianca_ia=None, qua
 def inserir_alerta(id_animal, tipo_alerta, descricao, status="aberto"):
     with cursor_dict() as (_, cur):
         cur.execute(
+            "UPDATE alerta SET status = 'fechado' WHERE id_animal = %s AND tipo_alerta = %s AND status = 'aberto'",
+            (id_animal, tipo_alerta),
+        )
+        cur.execute(
             """
             INSERT INTO alerta (id_animal, tipo_alerta, descricao, status)
             VALUES (%s, %s, %s, %s)
@@ -92,7 +96,15 @@ def listar_baias():
                     ORDER BY e.data_hora DESC LIMIT 1) AS ultima_refeicao,
                    (SELECT e.data_hora FROM evento e
                     WHERE e.id_animal = a.id_animal AND e.tipo_evento = 'agua'
-                    ORDER BY e.data_hora DESC LIMIT 1) AS ultima_agua
+                    ORDER BY e.data_hora DESC LIMIT 1) AS ultima_agua,
+                   EXISTS (SELECT 1 FROM alerta al
+                    WHERE al.id_animal = a.id_animal AND al.status = 'aberto') AS tem_alerta,
+                   (SELECT al.descricao FROM alerta al
+                    WHERE al.id_animal = a.id_animal AND al.status = 'aberto'
+                    ORDER BY al.criado_em DESC LIMIT 1) AS descricao_alerta,
+                   (SELECT al.id_alerta FROM alerta al
+                    WHERE al.id_animal = a.id_animal AND al.status = 'aberto'
+                    ORDER BY al.criado_em DESC LIMIT 1) AS id_alerta
             FROM baia b
             LEFT JOIN animal a
                 ON a.id_baia = b.id_baia AND a.status_internacao = 'internado'
@@ -266,14 +278,46 @@ def atualizar_senha_usuario(id_usuario, nova_senha):
         )
 
 
+def listar_alertas_animal(id_animal):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            """
+            SELECT id_alerta, tipo_alerta, descricao, status, criado_em
+            FROM alerta
+            WHERE id_animal = %s
+            ORDER BY criado_em DESC
+            """,
+            (id_animal,),
+        )
+        return cur.fetchall()
+
+
+def fechar_alertas_tipo(id_animal, tipo_alerta):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            "UPDATE alerta SET status = 'fechado' WHERE id_animal = %s AND tipo_alerta = %s AND status = 'aberto'",
+            (id_animal, tipo_alerta),
+        )
+
+
+def fechar_alerta(id_alerta):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            "UPDATE alerta SET status = 'fechado' WHERE id_alerta = %s",
+            (id_alerta,),
+        )
+
+
 def listar_alertas_abertos():
     with cursor_dict() as (_, cur):
         cur.execute(
             """
-            SELECT id_alerta, id_animal, tipo_alerta, descricao, status, criado_em
-            FROM alerta
-            WHERE status = 'aberto'
-            ORDER BY criado_em DESC
+            SELECT al.id_alerta, al.id_animal, a.nome AS nome_animal,
+                   al.tipo_alerta, al.descricao, al.status, al.criado_em
+            FROM alerta al
+            LEFT JOIN animal a ON a.id_animal = al.id_animal
+            WHERE al.status = 'aberto'
+            ORDER BY al.criado_em DESC
             """
         )
         return cur.fetchall()
