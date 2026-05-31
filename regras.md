@@ -1,290 +1,141 @@
-# 🐾 Regras de Interpretação de Comportamento
+# Regras de Interpretação de Comportamento
 
-## 📌 Objetivo
+## Objetivo
 
-Este documento define as regras utilizadas para transformar detecções visuais em **comportamentos interpretáveis**, como alimentação, hidratação, atividade, descanso e interações entre animais.
+Este documento define as regras utilizadas para transformar detecções visuais em comportamentos interpretáveis: alimentação, hidratação, descanso, agitação e apatia.
 
-O sistema utiliza detecção de objetos (YOLO), tracking por ID e regras baseadas em **tempo, proximidade, estabilidade e contexto**, evitando decisões baseadas em frames isolados.
+O sistema utiliza detecção via API Roboflow (modelo treinado com YOLOv8), tracking por centroide e regras baseadas em tempo, proximidade e movimento.
 
 ---
 
-## 🧠 Princípio Geral
+## Princípio Geral
 
 Nenhum comportamento é definido a partir de um único frame.
 
 Toda inferência considera:
 
-* Proximidade espacial
-* Duração temporal
-* Estabilidade do comportamento
-* Contexto do ambiente
-* Histórico recente do animal
+- Proximidade espacial entre animal e pote
+- Duração temporal do comportamento
+- Histórico de movimentação do animal
+- Contexto (perto de comida ou água)
 
 ---
 
-## 🔍 Detecções Base
+## Detecções Base
 
-O modelo de visão computacional identifica:
+O modelo identifica três classes:
 
-* Pet (cachorro/gato)
-* Tigela de ração
-* Tigela de água
+- `dog` — cachorro
+- `cat` — gato
+- `bowl` — tigela (pote)
 
-Além disso, o sistema utiliza tracking para manter um ID por animal durante a análise.
+O tracking é feito por centroide manual: a cada frame, cada detecção é associada ao animal mais próximo do frame anterior (distância máxima de 80px). Se nenhum animal estiver próximo, um novo ID é criado.
 
 ---
 
-## 📊 Sistema de Pontuação (Score)
+## Distinção dos Potes
 
-Cada comportamento é validado através de score:
+Como o modelo detecta apenas `bowl` (sem diferenciar comida de água), a distinção é feita por posição no frame:
 
-* Proximidade → peso
-* Tempo → peso
-* Estabilidade → peso
-* Contexto → peso
+- Pote no **lado esquerdo** → água
+- Pote no **lado direito** → comida
 
-### Exemplo
+O vídeo de monitoramento deve ser configurado com o pote de água à esquerda e o de comida à direita.
 
-* Score ≥ 0.7 → comportamento confirmado
-* Score entre 0.5 e 0.7 → comportamento incerto
-* Score < 0.5 → comportamento descartado
+---
 
+## Comportamentos Detectados
 
-## 🌗 Tratamento de Incerteza
+### Alimentação
 
-Devido a fatores como:
+Animal próximo ao pote de comida (lado direito) por tempo mínimo de **5 segundos**.
 
-* iluminação
-* oclusão
-* posicionamento da câmera
-* sobreposição entre animais
+- Distância animal ↔ pote ≤ 1.5× a largura do animal
+- Tolerância de pausa: 2 segundos (pequenos afastamentos não encerram o evento)
+- Interações menores que 5 segundos são classificadas como **cheirando**
 
-O sistema utiliza thresholds de confiança:
+### Hidratação
 
-* confiança > 0.7 → alta confiança
-* entre 0.5 e 0.7 → média confiança
-* abaixo de 0.5 → descartar evento
+Animal próximo ao pote de água (lado esquerdo) por tempo mínimo de **3 segundos**.
 
+- Mesma lógica de proximidade e tolerância da alimentação
+- Eventos de hidratação tendem a ser mais curtos que alimentação
 
-## 🍽️ Alimentação
+### Cheirando
 
-Um pet é considerado **comendo** quando:
+Animal se aproxima do pote mas não permanece tempo suficiente para confirmar alimentação ou hidratação (menos de 5 segundos para comida ou menos de 3 segundos para água).
 
-* Está próximo da tigela de ração
-* Mantém posição estável
-* Permanece nessa condição por tempo suficiente
+### Descanso
 
-### ✔️ Regras
+Animal com baixo movimento por pelo menos **5 minutos**.
 
-* Distância pet ↔ tigela ≤ ~50% da largura do pet
-* Tempo mínimo: 5 segundos
-* Baixa variação de posição (< ~5% do tamanho do pet)
-* Pequenos movimentos repetitivos da cabeça podem reforçar o score
-* O pote precisa ser identificado como pote de ração
+- Movimento médio < 1.5 px/frame (calculado sobre os últimos 30 frames)
+- Não está próximo de nenhum pote
+- Descanso isolado não gera alerta — só é considerado problema em conjunto com ausência de ingestão
 
-### ❗ Validação extra
+### Agitação
 
-* Interações menores que 2 segundos são classificadas como **cheirando**, não como alimentação
-* Caso o pet se afaste rapidamente, o evento é encerrado
-* Continuidade próxima ao pote aumenta confiança
+Animal com movimento intenso por mais de **15 minutos**.
 
+- Movimento médio > 15.0 px/frame
 
-## 💧 Hidratação
+### Apatia
 
-Um pet é considerado **bebendo** quando:
+Estado visual exibido quando o animal não come e não bebe há mais de **2 horas** desde o início da análise.
 
-* Está próximo da tigela de água
-* Permanece por curto período contínuo
+---
 
-### ✔️ Regras
+## Alertas Clínicos
 
-* Distância pet ↔ tigela ≤ ~50% da largura do pet
-* Tempo mínimo: 3 segundos
-* Baixa variação de posição
-* Movimento rápido/repetitivo da cabeça pode reforçar a inferência
-* Pote identificado como água
+Gerados ao final da análise com base no histórico do vídeo:
 
-### ❗ Observações
+| Condição | Alerta |
+|----------|--------|
+| Sem comer por mais de 6 horas | `sem_alimentacao` — crítico |
+| Sem beber por mais de 4 horas | `sem_hidratacao` — crítico |
+| Nenhuma refeição detectada no vídeo | `sem_refeicao_detectada` — aviso |
 
-* Eventos de hidratação são mais curtos que alimentação
-* Pequenas pausas são toleradas
-* Frequência de hidratação ao longo do dia pode ser analisada
+### Exibição no sistema
 
+- O card da baia fica vermelho quando há alerta aberto
+- Clicar no card exibe um modal com a descrição do alerta
+- O veterinário pode clicar em **"Ciente"** para marcar como resolvido
+- A página **Alertas Clínicos** lista todos os alertas abertos de todos os animais
 
-## 👃 Cheirando
+### Resolução automática
 
-Um pet é considerado **cheirando** quando:
+Quando um novo vídeo é analisado e detecta eventos:
+- Refeição detectada → fecha automaticamente alertas `sem_alimentacao` abertos do animal
+- Hidratação detectada → fecha automaticamente alertas `sem_hidratacao` abertos do animal
 
-* Está próximo ao pote
-* Permanece por pouco tempo
-* Não apresenta padrão de alimentação ou hidratação
+### Histórico
 
-### ✔️ Regras
+Alertas resolvidos ficam registrados no banco com `status = 'fechado'` e aparecem no relatório clínico do animal com o status **"Resolvido"**.
 
-* Tempo curto (< 2 segundos)
-* Sem movimentos repetitivos
-* Entrada e saída rápida do local
+---
 
-## 🧍 Inatividade
+## Parâmetros
 
-Um pet é considerado **inativo** quando:
+| Parâmetro | Valor |
+|-----------|-------|
+| Distância máxima animal ↔ pote | 1.5× largura do animal |
+| Tempo mínimo comendo | 5 segundos |
+| Tempo mínimo bebendo | 3 segundos |
+| Tolerância de pausa | 2 segundos |
+| Tempo para descanso | 5 minutos |
+| Tempo para agitação | 15 minutos |
+| Movimento baixo | < 1.5 px/frame |
+| Movimento alto | > 15.0 px/frame |
+| Confiança mínima Roboflow | 30% |
+| Distância máxima tracker | 80 px |
+| Processar a cada N frames | 5 |
 
-* Não apresenta movimentação significativa por período prolongado
+---
 
-### ✔️ Regras
+## Limitações Conhecidas
 
-* Deslocamento mínimo entre frames (< ~5% do tamanho do pet)
-* Tempo contínuo sem movimento: 10 minutos
-
-## 🚶 Atividade
-
-Um pet é considerado **ativo** quando:
-
-* Apresenta deslocamento relevante no ambiente
-
-### ✔️ Regras
-
-* Deslocamento > ~15% do tamanho do pet
-* Mudança constante de posição
-* Interação frequente com ambiente
-
-
-## 😴 Descanso / Sono
-
-Um pet é considerado em **descanso** quando:
-
-* Está deitado
-* Sem movimentação significativa
-* Por pelo menos 5 minutos
-
-### ⚖️ Interpretação
-
-* Descanso é comportamento normal
-* Animais podem permanecer em repouso por várias horas
-
-### 🚨 Geração de alerta
-
-O descanso isolado não gera alerta.
-
-Alertas são gerados apenas quando combinado com:
-
-* Ausência de alimentação por mais de 6 horas
-* Ausência de hidratação por mais de 4 horas
-* Baixo nível geral de atividade
-
-### 🔴 Regra de atenção
-
-* Descanso contínuo > 3 horas deve ser analisado em conjunto com outros fatores
-
-## 😟 Apatia
-
-Um pet pode ser considerado **apático** quando:
-
-* Permanece muito tempo sem atividade
-* Não interage com água ou comida
-* Demonstra redução significativa de comportamento
-
-### ✔️ Regras
-
-* Inatividade prolongada (> 2 horas)
-* Pouca interação com ambiente
-* Diferença relevante em relação ao padrão normal do animal
-
-
-## 😰 Estresse / Agitação
-
-Um pet pode ser considerado **agitado** quando:
-
-* Apresenta movimentação excessiva ou repetitiva
-
-### ✔️ Regras
-
-* Movimento constante no ambiente
-* Longo período ativo (> 15 minutos)
-* Caminhar repetidamente em padrões semelhantes
-* Interação frequente com grades/portas
-
-## 🐶🐶 Interação entre animais
-
-### ✔️ Interação normal
-
-* Aproximação curta
-* Movimento leve
-* Separação rápida
-* Sem sinais agressivos
-
-### ⚠️ Interação problemática
-
-* Proximidade excessiva por tempo prolongado
-* Movimentos bruscos/intensos
-* Sobreposição significativa entre corpos
-* Dificuldade de separação pelo tracking
-
-
-## 🐶🐶 Cenários com múltiplos animais
-
-Para ambientes com mais de um pet:
-
-* Cada animal é identificado por tracking (ID)
-* Eventos são associados ao ID correspondente
-
-### ❗ Tratamento de conflito
-
-* Se dois animais estiverem muito próximos:
-  * Evento pode ser marcado como **incerto**
-  * Sobreposição > ~30% aumenta nível de incerteza
-  * Eventos com baixa confiança podem ser descartados
-
-
-## 🚨 Regras Clínicas
-
-As regras clínicas avaliam ausência ou combinação de comportamentos ao longo do tempo.
-
-### Exemplos
-
-* Sem alimentação por 6 horas → alerta
-* Sem hidratação por 4 horas → alerta
-* Inatividade por mais de 30 minutos → alerta
-* Descanso prolongado + ausência de ingestão → alerta
-* Queda anormal no padrão de atividade → alerta
-
-
-## ⏱️ Sessões de Comportamento
-
-Eventos contínuos são agrupados em sessões:
-
-* Alimentação
-* Hidratação
-* Descanso
-* Atividade
-* Cheirando
-
-Cada sessão possui:
-
-* Início
-* Fim
-* Duração total
-
-
-## ⚖️ Validação de Interação
-
-Para confirmar um comportamento, o sistema exige:
-
-* Proximidade
-* Tempo mínimo
-* Consistência
-* Contexto compatível
-
-### Fórmula conceitual
-
-**Interação = proximidade + tempo + estabilidade + contexto**
-
-
-## ⚠️ Limitações Conhecidas
-
-* Proximidade não garante interação real
-* Objetos semelhantes podem causar confusão
-* Tracking pode falhar em sobreposição de animais
-* Diferenças de raça e tamanho impactam detecção
-* Condições de iluminação podem reduzir precisão
-* Alguns comportamentos podem ser ambíguos sem contexto clínico adicional
+- Distinção dos potes por posição no frame é temporária — depende do posicionamento do vídeo
+- Tracking pode falhar se dois animais se sobrepuserem por muitos frames
+- Iluminação ruim ou oclusão reduzem a precisão da detecção
+- Comportamentos como "dormindo" não são detectáveis — descanso prolongado é a aproximação mais próxima
+- O sistema é projetado para uma câmera por baia (um animal por câmera)

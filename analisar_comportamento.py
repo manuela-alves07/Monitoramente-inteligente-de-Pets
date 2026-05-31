@@ -27,7 +27,6 @@ TEMPO_COMER_MIN   = 5
 TEMPO_BEBER_MIN   = 3
 TOLERANCIA_PAUSA  = 2
 TEMPO_DESCANSO    = 5  * 60
-TEMPO_INATIVIDADE = 10 * 60
 TEMPO_AGITACAO    = 15 * 60
 MOVIMENTO_BAIXO   = 1.5
 MOVIMENTO_ALTO    = 15.0
@@ -276,9 +275,7 @@ while cap.isOpened():
                 a['inicio_inatividade'] = agora
             a['inicio_agitacao'] = None
             tempo_inativo = (agora - a['inicio_inatividade']).total_seconds()
-            if tempo_inativo >= TEMPO_INATIVIDADE:
-                a['estado'] = 'INATIVO'
-            elif tempo_inativo >= TEMPO_DESCANSO:
+            if tempo_inativo >= TEMPO_DESCANSO:
                 a['estado'] = 'DESCANSANDO'
             else:
                 a['estado'] = 'parado'
@@ -309,7 +306,7 @@ while cap.isOpened():
             estado, cor = 'COMENDO', (0, 200, 0)
         elif a['bebendo_agora']:
             estado, cor = 'BEBENDO', (255, 200, 0)
-        elif a['estado'] in ('INATIVO', 'DESCANSANDO'):
+        elif a['estado'] == 'DESCANSANDO':
             estado, cor = a['estado'], (100, 100, 255)
         elif a['estado'] == 'AGITADO':
             estado, cor = 'AGITADO', (0, 0, 255)
@@ -331,7 +328,7 @@ while cap.isOpened():
     status_cor = (0, 200, 0)   if status_txt == 'COMENDO'                      else \
                  (255, 200, 0) if status_txt == 'BEBENDO'                      else \
                  (0, 0, 255)   if status_txt in ('AGITADO', 'APATICO')         else \
-                 (100, 100, 255) if status_txt in ('INATIVO', 'DESCANSANDO')   else \
+                 (100, 100, 255) if status_txt == 'DESCANSANDO'               else \
                  (180, 180, 180)
     cv2.rectangle(frame, (0, 0), (400, 40), (20, 20, 20), -1)
     cv2.putText(frame, status_txt, (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.9, status_cor, 2)
@@ -371,11 +368,11 @@ for track_id, a in animais.items():
     sem_beber = (datetime.now() - ref_beber).total_seconds()
     if sem_comer > ALERTA_SEM_COMER:
         alertas.append({'tipo': 'sem_alimentacao', 'animal_id': track_id,
-                        'mensagem': f'Animal #{track_id} sem comer há {sem_comer/3600:.1f}h',
+                        'mensagem': f'Animal está sem comer há {sem_comer/3600:.1f}h',
                         'nivel': 'critico'})
     if sem_beber > ALERTA_SEM_BEBER:
         alertas.append({'tipo': 'sem_hidratacao', 'animal_id': track_id,
-                        'mensagem': f'Animal #{track_id} sem beber há {sem_beber/3600:.1f}h',
+                        'mensagem': f'Animal está sem beber há {sem_beber/3600:.1f}h',
                         'nivel': 'critico'})
 
 if not any(e['tipo'] == 'refeicao' for e in eventos):

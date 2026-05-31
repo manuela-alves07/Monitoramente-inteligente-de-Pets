@@ -75,7 +75,7 @@ const itensMenu = [
   { rotulo: 'Dashboard',    icone: <IconeDashboard />,    rota: '/painel' },
   { rotulo: 'Novo animal',  icone: <IconeNovoCadastro />, rota: '/cadastro' },
   { rotulo: 'Histórico',    icone: <IconeRelatorios />,   rota: '/historico' },
-  { rotulo: 'Alertas',      icone: <IconeAlertas />,      rota: null },
+  { rotulo: 'Alertas',      icone: <IconeAlertas />,      rota: '/alertas' },
   { rotulo: 'Configurações',icone: <IconeConfiguracoes />,rota: '/configuracoes' },
 ]
 

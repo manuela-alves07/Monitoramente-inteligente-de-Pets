@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { analisarVideo, atualizarAnimal, buscarAnimal, darBaixa, listarBaias, listarEventos, salvarObservacoes, transferirBaia } from '../servicos/api'
+import { analisarVideo, atualizarAnimal, buscarAnimal, darBaixa, listarAlertasAnimal, listarBaias, listarEventos, salvarObservacoes, transferirBaia } from '../servicos/api'
 import './PaginaDetalhesPet.css'
 
 function IconeVoltar() {
@@ -59,6 +59,7 @@ export default function PaginaDetalhesPet() {
   const [baias, setBaias]                   = useState([])
   const [baiaDestino, setBaiaDestino]       = useState('')
   const [transferindo, setTransferindo]     = useState(false)
+  const [alertasAnimal, setAlertasAnimal]   = useState([])
   const inputVideoRef = useRef(null)
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function PaginaDetalhesPet() {
         setObservacoes(a.observacoes ?? '')
       }).catch(() => {})
       listarEventos(baia.pet.id).then(setEventosDB).catch(() => {})
+      listarAlertasAnimal(baia.pet.id).then(setAlertasAnimal).catch(() => {})
     }
   }, [baia?.pet?.id])
 
@@ -356,6 +358,23 @@ export default function PaginaDetalhesPet() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {alertasAnimal.filter(a => a.status === 'aberto').length > 0 && (
+          <div className="detalhes-secao detalhes-secao--alerta">
+            <h3>⚠️ Alertas ativos</h3>
+            <div className="detalhes-atividades">
+              {alertasAnimal.filter(a => a.status === 'aberto').map(a => (
+                <div key={a.id_alerta} className="atividade-item">
+                  <span className="atividade-label" style={{ color: '#ff8080' }}>
+                    {a.tipo_alerta === 'sem_alimentacao' ? 'Alimentação' :
+                     a.tipo_alerta === 'sem_hidratacao'  ? 'Hidratação'  : 'Alerta'}
+                  </span>
+                  <span className="atividade-valor" style={{ color: '#ff8080' }}>{a.descricao}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

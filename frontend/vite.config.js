@@ -10,6 +10,7 @@ export default defineConfig({
       '/baias':      'http://localhost:5000',
       '/animais':    'http://localhost:5000',
       '/usuarios':   'http://localhost:5000',
+      '/alertas':    'http://localhost:5000',
       '/analisar': {
         target: 'http://localhost:5000',
         timeout: 300000,

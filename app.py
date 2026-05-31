@@ -7,7 +7,11 @@ from flask_cors import CORS
 
 from banco.repositorio import (
     autenticar_usuario,
+    fechar_alerta,
+    fechar_alertas_tipo,
     garantir_admin,
+    listar_alertas_abertos,
+    listar_alertas_animal,
     atualizar_animal,
     atualizar_senha_usuario,
     buscar_animal,
@@ -171,6 +175,22 @@ def rota_dar_baixa(id_animal):
     return jsonify({"ok": True})
 
 
+@app.route("/alertas", methods=["GET"])
+def rota_listar_alertas():
+    return jsonify([serializar(a) for a in listar_alertas_abertos()])
+
+
+@app.route("/animais/<int:id_animal>/alertas", methods=["GET"])
+def rota_listar_alertas_animal(id_animal):
+    return jsonify([serializar(a) for a in listar_alertas_animal(id_animal)])
+
+
+@app.route("/alertas/<int:id_alerta>/fechar", methods=["POST"])
+def rota_fechar_alerta(id_alerta):
+    fechar_alerta(id_alerta)
+    return jsonify({"ok": True})
+
+
 @app.route("/animais/<int:id_animal>/eventos", methods=["GET"])
 def rota_listar_eventos(id_animal):
     return jsonify([serializar(e) for e in listar_eventos(id_animal=id_animal)])
@@ -298,20 +318,28 @@ def analisar():
     if id_animal:
         try:
             id_animal = int(id_animal)
-            for ref in relatorio.get("refeicoes", []):
+            refeicoes = relatorio.get("refeicoes", [])
+            hidratacoes = relatorio.get("hidratacoes", [])
+
+            for ref in refeicoes:
                 inserir_evento(
                     id_animal=id_animal,
                     origem_camera=None,
                     tipo_evento="refeicao",
                     confianca_ia=ref.get("confianca"),
                 )
-            for beb in relatorio.get("hidratacoes", []):
+            for beb in hidratacoes:
                 inserir_evento(
                     id_animal=id_animal,
                     origem_camera=None,
                     tipo_evento="agua",
                     confianca_ia=beb.get("confianca"),
                 )
+
+            if refeicoes:
+                fechar_alertas_tipo(id_animal, "sem_alimentacao")
+            if hidratacoes:
+                fechar_alertas_tipo(id_animal, "sem_hidratacao")
             for alerta in relatorio.get("alertas", []):
                 inserir_alerta(
                     id_animal=id_animal,

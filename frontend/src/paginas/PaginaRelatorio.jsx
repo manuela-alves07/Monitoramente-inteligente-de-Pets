@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { buscarAnimal, listarEventos } from '../servicos/api'
+import { buscarAnimal, listarAlertasAnimal, listarEventos } from '../servicos/api'
 import './PaginaRelatorio.css'
 
 function formatarData(iso) {
@@ -24,10 +24,11 @@ export default function PaginaRelatorio() {
   const { id } = useParams()
   const navegar = useNavigate()
 
-  const [animal, setAnimal]     = useState(null)
-  const [eventos, setEventos]   = useState([])
+  const [animal, setAnimal]         = useState(null)
+  const [eventos, setEventos]       = useState([])
+  const [alertasDB, setAlertasDB]   = useState([])
   const [carregando, setCarregando] = useState(true)
-  const [erro, setErro]         = useState('')
+  const [erro, setErro]             = useState('')
 
   const observacoes = animal?.observacoes ?? ''
   const config = JSON.parse(localStorage.getItem('vetvision-config') || '{}')
@@ -36,12 +37,14 @@ export default function PaginaRelatorio() {
   useEffect(() => {
     async function carregar() {
       try {
-        const [a, e] = await Promise.all([
+        const [a, e, al] = await Promise.all([
           buscarAnimal(id),
           listarEventos(id),
+          listarAlertasAnimal(id),
         ])
         setAnimal(a)
         setEventos(e)
+        setAlertasDB(al)
       } catch {
         setErro('Não foi possível carregar os dados do animal.')
       } finally {
@@ -56,7 +59,6 @@ export default function PaginaRelatorio() {
 
   const refeicoes = eventos.filter(e => e.tipo_evento === 'refeicao')
   const agua      = eventos.filter(e => e.tipo_evento === 'agua')
-  const alertas   = eventos.filter(e => e.tipo_evento === 'alerta')
 
   return (
     <div className="pagina-relatorio">
@@ -261,18 +263,19 @@ export default function PaginaRelatorio() {
           )}
         </section>
 
-        {alertas.length > 0 && (
+        {alertasDB.length > 0 && (
           <section className="relatorio-secao">
             <h2>Alertas Registrados</h2>
             <table className="relatorio-tabela">
               <thead>
-                <tr><th>Data / Hora</th><th>Descrição</th></tr>
+                <tr><th>Data / Hora</th><th>Descrição</th><th>Status</th></tr>
               </thead>
               <tbody>
-                {alertas.map(a => (
-                  <tr key={a.id_evento}>
-                    <td>{formatarDataHora(a.data_hora)}</td>
-                    <td>{a.tipo_evento}</td>
+                {alertasDB.map(a => (
+                  <tr key={a.id_alerta}>
+                    <td>{formatarDataHora(a.criado_em)}</td>
+                    <td>{a.descricao}</td>
+                    <td>{a.status === 'aberto' ? 'Ativo' : 'Resolvido'}</td>
                   </tr>
                 ))}
               </tbody>
