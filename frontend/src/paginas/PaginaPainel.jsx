@@ -29,12 +29,26 @@ function LogoPatinha() {
   )
 }
 
+function formatarHora(iso) {
+  if (!iso) return null
+  const data = new Date(iso)
+  const hoje = new Date()
+  const ontem = new Date(hoje)
+  ontem.setDate(hoje.getDate() - 1)
+  const hora = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  if (data.toDateString() === hoje.toDateString()) return `Hoje às ${hora}`
+  if (data.toDateString() === ontem.toDateString()) return `Ontem às ${hora}`
+  return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ` às ${hora}`
+}
+
 function mapearBaia(b) {
   const temPet = b.id_animal && b.status_internacao === 'internado'
   return {
-    id_baia: b.id_baia,
-    numero:  b.numero,
-    temDados: false,
+    id_baia:        b.id_baia,
+    numero:         b.numero,
+    temDados:       false,
+    ultimaRefeicao: formatarHora(b.ultima_refeicao),
+    ultimaAgua:     formatarHora(b.ultima_agua),
     pet: temPet ? {
       id:          b.id_animal,
       nome:        b.nome,
@@ -54,11 +68,24 @@ function carregarConfig() {
 
 
 export default function PaginaPainel() {
-  const [menuAberto, setMenuAberto] = useState(false)
-  const [baias, setBaias]           = useState([])
-  const [carregando, setCarregando] = useState(true)
-  const [config]                    = useState(carregarConfig)
+  const [menuAberto, setMenuAberto]         = useState(false)
+  const [dropdownAberto, setDropdownAberto] = useState(false)
+  const [baias, setBaias]                   = useState([])
+  const [carregando, setCarregando]         = useState(true)
+  const [config]                            = useState(carregarConfig)
   const navegar = useNavigate()
+
+  const nomeUsuario = localStorage.getItem('vetvision-usuario') ?? 'Usuário'
+  const loginUsuario = localStorage.getItem('vetvision-login') ?? ''
+  const roleUsuario  = localStorage.getItem('vetvision-role') ?? 'user'
+
+  function logout() {
+    localStorage.removeItem('vetvision-usuario')
+    localStorage.removeItem('vetvision-login')
+    localStorage.removeItem('vetvision-role')
+    localStorage.removeItem('vetvision-id-usuario')
+    navegar('/')
+  }
 
   useEffect(() => {
     async function carregar() {
@@ -92,8 +119,26 @@ export default function PaginaPainel() {
           </div>
         </div>
         <div className="topo-direita">
-          <div className="avatar">
-            {(localStorage.getItem('vetvision-usuario') ?? 'U')[0].toUpperCase()}
+          <div className="avatar-wrapper">
+            <button className="avatar" onClick={() => setDropdownAberto(d => !d)}>
+              {nomeUsuario[0].toUpperCase()}
+            </button>
+            {dropdownAberto && (
+              <div className="avatar-dropdown">
+                <div className="dropdown-info">
+                  <strong>{nomeUsuario}</strong>
+                  <span>{loginUsuario}</span>
+                  <span className="dropdown-role">{roleUsuario === 'admin' ? 'Administrador' : 'Usuário'}</span>
+                </div>
+                <hr className="dropdown-divisor" />
+                <button className="dropdown-item" onClick={() => { setDropdownAberto(false); navegar('/perfil') }}>
+                  Alterar senha
+                </button>
+                <button className="dropdown-item dropdown-item--sair" onClick={logout}>
+                  Sair
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -102,6 +147,9 @@ export default function PaginaPainel() {
 
       {menuAberto && (
         <div className="overlay-menu" onClick={() => setMenuAberto(false)} />
+      )}
+      {dropdownAberto && (
+        <div className="overlay-menu overlay-menu--transparente" onClick={() => setDropdownAberto(false)} />
       )}
 
       <main className="conteudo-principal">
@@ -125,8 +173,8 @@ export default function PaginaPainel() {
                 key={baia.numero}
                 numero={baia.numero}
                 pet={baia.pet}
-                status={!baia.pet ? 'vazia' : 'aguardando'}
-                ultimaRefeicao={null}
+                status={!baia.pet ? 'vazia' : (baia.ultimaRefeicao || baia.ultimaAgua) ? 'monitorado' : 'aguardando'}
+                ultimaRefeicao={baia.ultimaRefeicao}
                 onVerDetalhes={() => abrirDetalhesBaia(baia)}
               />
             ))}

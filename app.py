@@ -23,6 +23,8 @@ from banco.repositorio import (
     listar_usuarios,
     remover_baia,
     remover_usuario,
+    salvar_observacoes,
+    transferir_baia,
 )
 
 app = Flask(__name__)
@@ -45,7 +47,7 @@ def serializar(linha):
     saida = {}
     for chave, valor in linha.items():
         if hasattr(valor, "isoformat"):
-            saida[chave] = valor.isoformat()
+            saida[chave] = valor.isoformat() + 'Z'
         else:
             saida[chave] = valor
     return saida
@@ -130,6 +132,27 @@ def rota_atualizar_animal(id_animal):
     return jsonify(serializar(buscar_animal(id_animal)))
 
 
+@app.route("/animais/<int:id_animal>/observacoes", methods=["PUT"])
+def rota_salvar_observacoes(id_animal):
+    if not buscar_animal(id_animal):
+        return jsonify({"erro": "Animal nao encontrado"}), 404
+    dados = request.get_json(silent=True) or {}
+    salvar_observacoes(id_animal, dados.get("observacoes", ""))
+    return jsonify({"ok": True})
+
+
+@app.route("/animais/<int:id_animal>/transferir", methods=["POST"])
+def rota_transferir_baia(id_animal):
+    if not buscar_animal(id_animal):
+        return jsonify({"erro": "Animal nao encontrado"}), 404
+    dados = request.get_json(silent=True) or {}
+    id_baia_destino = dados.get("id_baia")
+    if not id_baia_destino:
+        return jsonify({"erro": "id_baia é obrigatório"}), 400
+    transferir_baia(id_animal, int(id_baia_destino))
+    return jsonify(serializar(buscar_animal(id_animal)))
+
+
 @app.route("/animais/<int:id_animal>/baixa", methods=["POST"])
 def rota_dar_baixa(id_animal):
     if not buscar_animal(id_animal):
@@ -185,6 +208,21 @@ def rota_inserir_usuario():
 @app.route("/usuarios/<int:id_usuario>", methods=["DELETE"])
 def rota_remover_usuario(id_usuario):
     remover_usuario(id_usuario)
+    return jsonify({"ok": True})
+
+
+@app.route("/usuarios/me/senha", methods=["PUT"])
+def rota_trocar_minha_senha():
+    dados = request.get_json(silent=True) or {}
+    login = dados.get("login", "").strip()
+    senha_atual = dados.get("senha_atual", "")
+    nova_senha = dados.get("nova_senha", "").strip()
+    if not login or not senha_atual or not nova_senha:
+        return jsonify({"erro": "Preencha todos os campos"}), 400
+    usuario = autenticar_usuario(login, senha_atual)
+    if not usuario:
+        return jsonify({"erro": "Senha atual incorreta"}), 401
+    atualizar_senha_usuario(usuario["id_usuario"], nova_senha)
     return jsonify({"ok": True})
 
 

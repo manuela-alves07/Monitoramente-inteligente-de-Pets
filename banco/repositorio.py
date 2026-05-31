@@ -86,7 +86,13 @@ def listar_baias():
             """
             SELECT b.id_baia, b.numero, b.localizacao, b.status,
                    a.id_animal, a.nome, a.especie, a.raca, a.tutor,
-                   a.status_internacao, a.data_entrada
+                   a.status_internacao, a.data_entrada,
+                   (SELECT e.data_hora FROM evento e
+                    WHERE e.id_animal = a.id_animal AND e.tipo_evento = 'refeicao'
+                    ORDER BY e.data_hora DESC LIMIT 1) AS ultima_refeicao,
+                   (SELECT e.data_hora FROM evento e
+                    WHERE e.id_animal = a.id_animal AND e.tipo_evento = 'agua'
+                    ORDER BY e.data_hora DESC LIMIT 1) AS ultima_agua
             FROM baia b
             LEFT JOIN animal a
                 ON a.id_baia = b.id_baia AND a.status_internacao = 'internado'
@@ -117,6 +123,22 @@ def atualizar_animal(id_animal, nome, especie, raca, tutor, telefone,
             (nome, especie, raca, tutor, telefone,
              idade, peso, motivo, diagnostico, medicamentos, alergias, veterinario,
              id_animal),
+        )
+
+
+def salvar_observacoes(id_animal, observacoes):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            "UPDATE animal SET observacoes = %s WHERE id_animal = %s",
+            (observacoes, id_animal),
+        )
+
+
+def transferir_baia(id_animal, id_baia_destino):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            "UPDATE animal SET id_baia = %s WHERE id_animal = %s",
+            (id_baia_destino, id_animal),
         )
 
 
@@ -194,7 +216,7 @@ def listar_eventos(id_animal=None, limite=50):
 def autenticar_usuario(login, senha):
     with cursor_dict() as (_, cur):
         cur.execute(
-            "SELECT * FROM usuario WHERE email = %s AND senha_hash = %s",
+            "SELECT *, perfil AS role, email AS login FROM usuario WHERE email = %s AND senha_hash = %s",
             (login, senha),
         )
         return cur.fetchone()

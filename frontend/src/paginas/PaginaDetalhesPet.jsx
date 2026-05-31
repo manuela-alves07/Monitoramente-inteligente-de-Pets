@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { analisarVideo, atualizarAnimal, buscarAnimal, darBaixa, listarEventos } from '../servicos/api'
+import { analisarVideo, atualizarAnimal, buscarAnimal, darBaixa, listarBaias, listarEventos, salvarObservacoes, transferirBaia } from '../servicos/api'
 import './PaginaDetalhesPet.css'
 
 function IconeVoltar() {
@@ -32,8 +32,7 @@ export default function PaginaDetalhesPet() {
   const { state } = useLocation()
   const navegar = useNavigate()
 
-  const baia         = state?.baia
-  const chaveStorage = `obs-baia-${baia?.numero}`
+  const baia = state?.baia
 
   const [petCompleto, setPetCompleto]       = useState(null)
   const [observacoes, setObservacoes]       = useState('')
@@ -56,24 +55,50 @@ export default function PaginaDetalhesPet() {
   const [formEdicao, setFormEdicao]         = useState({})
   const [salvandoEdicao, setSalvandoEdicao] = useState(false)
   const [erroEdicao, setErroEdicao]         = useState('')
+  const [modalTransferencia, setModalTransferencia] = useState(false)
+  const [baias, setBaias]                   = useState([])
+  const [baiaDestino, setBaiaDestino]       = useState('')
+  const [transferindo, setTransferindo]     = useState(false)
   const inputVideoRef = useRef(null)
 
   useEffect(() => {
-    const salvas = localStorage.getItem(chaveStorage)
-    if (salvas) setObservacoes(salvas)
-  }, [chaveStorage])
-
-  useEffect(() => {
     if (baia?.pet?.id) {
-      buscarAnimal(baia.pet.id).then(setPetCompleto).catch(() => {})
+      buscarAnimal(baia.pet.id).then(a => {
+        setPetCompleto(a)
+        setObservacoes(a.observacoes ?? '')
+      }).catch(() => {})
       listarEventos(baia.pet.id).then(setEventosDB).catch(() => {})
     }
   }, [baia?.pet?.id])
 
-  function salvarObservacoes() {
-    localStorage.setItem(chaveStorage, observacoes)
-    setSalvo(true)
-    setTimeout(() => setSalvo(false), 2000)
+  async function gravarObservacoes() {
+    try {
+      await salvarObservacoes(pet.id, observacoes)
+      setSalvo(true)
+      setTimeout(() => setSalvo(false), 2000)
+    } catch {
+      alert('Erro ao salvar observações.')
+    }
+  }
+
+  async function abrirTransferencia() {
+    const todas = await listarBaias()
+    const livres = todas.filter(b => !b.id_animal && b.id_baia !== baia.id_baia)
+    setBaias(livres)
+    setBaiaDestino(livres[0]?.id_baia ?? '')
+    setModalTransferencia(true)
+  }
+
+  async function confirmarTransferencia() {
+    if (!baiaDestino) return
+    setTransferindo(true)
+    try {
+      await transferirBaia(pet.id, baiaDestino)
+      navegar('/painel')
+    } catch {
+      alert('Erro ao transferir. Verifique se o servidor está rodando.')
+      setTransferindo(false)
+    }
   }
 
   function abrirEdicao() {
@@ -116,8 +141,8 @@ export default function PaginaDetalhesPet() {
   }
 
   async function confirmarAlta() {
-    if (!formAlta.diagnostico_final.trim() || !formAlta.medicamentos_alta.trim() || !formAlta.instrucoes_alta.trim()) {
-      setErroAlta('Preencha diagnóstico final, medicamentos e instruções antes de confirmar.')
+    if (!formAlta.diagnostico_final.trim() || !formAlta.data_retorno) {
+      setErroAlta('Preencha o diagnóstico final e a data de retorno antes de confirmar.')
       return
     }
     setErroAlta('')
@@ -170,13 +195,7 @@ export default function PaginaDetalhesPet() {
             </div>
           </div>
           <div className="detalhes-secao">
-            <h3>Observações</h3>
-            <textarea className="detalhes-obs"
-              placeholder="Adicione observações sobre esta baia..."
-              value={observacoes} onChange={e => setObservacoes(e.target.value)} />
-            <button className="botao-salvar" onClick={salvarObservacoes}>
-              {salvo ? '✓ Salvo!' : 'Salvar observações'}
-            </button>
+            <p style={{ color: '#6b7a99' }}>Cadastre um animal nesta baia para iniciar o monitoramento.</p>
           </div>
         </main>
       </div>
@@ -186,11 +205,20 @@ export default function PaginaDetalhesPet() {
   const pet      = baia.pet
   const dados    = petCompleto ?? pet
   const refeicoes = relatorioLocal?.refeicoes ?? []
-  const ultimaAlimentacao = refeicoes.length > 0 ? refeicoes[refeicoes.length - 1].inicio : '—'
   const duracaoTotal = refeicoes.reduce((soma, r) => soma + r.duracao_s, 0)
 
-  const eventosAgua = eventosDB.filter(e => e.tipo_evento === 'agua')
-  const ultimaAgua  = eventosAgua.length > 0
+  const eventosRefeicao = eventosDB.filter(e => e.tipo_evento === 'refeicao')
+  const eventosAgua     = eventosDB.filter(e => e.tipo_evento === 'agua')
+
+  const ultimaAlimentacao = refeicoes.length > 0
+    ? refeicoes[refeicoes.length - 1].inicio
+    : eventosRefeicao.length > 0
+      ? new Date(eventosRefeicao[0].data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      : '—'
+
+  const totalRefeicoes = refeicoes.length > 0 ? refeicoes.length : eventosRefeicao.length
+
+  const ultimaAgua = eventosAgua.length > 0
     ? new Date(eventosAgua[0].data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : '—'
 
@@ -207,12 +235,12 @@ export default function PaginaDetalhesPet() {
 
         <div className="detalhes-titulo">
           <span className="detalhes-emoji">
-            {{ gato: '🐱', cachorro: '🐶', coelho: '🐰', passaro: '🐦' }[dados.tipo ?? dados.especie] ?? '🐾'}
+            {{ gato: '🐱', cachorro: '🐶' }[dados.tipo ?? dados.especie] ?? '🐾'}
           </span>
           <div>
             <h1>{dados.nome}</h1>
             <span className="detalhes-subtitulo">
-              Baia {baia.numero} · {{ gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', passaro: 'Pássaro' }[dados.tipo ?? dados.especie] ?? dados.especie} · {dados.raca ?? '—'}
+              Baia {baia.numero} · {{ gato: 'Gato', cachorro: 'Cachorro' }[dados.tipo ?? dados.especie] ?? dados.especie} · {dados.raca ?? '—'}
             </span>
           </div>
         </div>
@@ -232,7 +260,7 @@ export default function PaginaDetalhesPet() {
           </div>
           <div className="detalhe-card">
             <small>Refeições hoje</small>
-            <strong>{refeicoes.length}</strong>
+            <strong>{totalRefeicoes}</strong>
           </div>
         </div>
 
@@ -333,7 +361,7 @@ export default function PaginaDetalhesPet() {
           <textarea className="detalhes-obs"
             placeholder="Adicione observações, evolução do quadro, procedimentos realizados..."
             value={observacoes} onChange={e => setObservacoes(e.target.value)} />
-          <button className="botao-salvar" onClick={salvarObservacoes}>
+          <button className="botao-salvar" onClick={gravarObservacoes}>
             {salvo ? '✓ Salvo!' : 'Salvar observações'}
           </button>
         </div>
@@ -341,6 +369,9 @@ export default function PaginaDetalhesPet() {
         <div className="detalhes-acoes-alta">
           <button className="botao-editar" onClick={abrirEdicao}>
             Editar dados
+          </button>
+          <button className="botao-editar" onClick={abrirTransferencia}>
+            Trocar Baia
           </button>
           <button className="botao-relatorio" onClick={() => navegar(`/relatorio/${pet.id}`)}>
             Gerar Relatório
@@ -383,7 +414,7 @@ export default function PaginaDetalhesPet() {
             </label>
 
             <label className="modal-label">
-              Medicamentos para casa
+              Medicamentos para casa <span style={{ color: '#6b7a99', fontWeight: 400 }}>(opcional)</span>
               <textarea
                 className="modal-input modal-textarea"
                 placeholder="Ex: Amoxicilina 250mg, 2x ao dia por 7 dias..."
@@ -393,7 +424,7 @@ export default function PaginaDetalhesPet() {
             </label>
 
             <label className="modal-label">
-              Instruções para o tutor
+              Instruções para o tutor <span style={{ color: '#6b7a99', fontWeight: 400 }}>(opcional)</span>
               <textarea
                 className="modal-input modal-textarea"
                 placeholder="Cuidados em casa, restrições, alimentação..."
@@ -403,7 +434,7 @@ export default function PaginaDetalhesPet() {
             </label>
 
             <label className="modal-label">
-              Data de retorno (opcional)
+              Data de retorno
               <input
                 type="date"
                 className="modal-input"
@@ -419,6 +450,44 @@ export default function PaginaDetalhesPet() {
               </button>
               <button className="modal-btn-confirmar" onClick={confirmarAlta} disabled={dandoBaixa}>
                 {dandoBaixa ? 'Processando...' : 'Confirmar Alta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalTransferencia && (
+        <div className="modal-overlay" onClick={() => setModalTransferencia(false)}>
+          <div className="modal-alta" onClick={e => e.stopPropagation()}>
+            <h2>Trocar baia de {pet.nome}</h2>
+            {baias.length === 0 ? (
+              <p style={{ color: '#aaa', margin: '1rem 0' }}>Nenhuma baia livre disponível no momento.</p>
+            ) : (
+              <label className="modal-label">
+                Baia de destino
+                <select
+                  className="modal-input"
+                  value={baiaDestino}
+                  onChange={e => setBaiaDestino(e.target.value)}
+                >
+                  {baias.map(b => (
+                    <option key={b.id_baia} value={b.id_baia}>
+                      {b.numero}{b.localizacao ? ` — ${b.localizacao}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="modal-acoes">
+              <button className="modal-btn-cancelar" onClick={() => setModalTransferencia(false)}>
+                Cancelar
+              </button>
+              <button
+                className="modal-btn-confirmar"
+                onClick={confirmarTransferencia}
+                disabled={transferindo || baias.length === 0}
+              >
+                {transferindo ? 'Transferindo...' : 'Confirmar transferência'}
               </button>
             </div>
           </div>
@@ -442,8 +511,6 @@ export default function PaginaDetalhesPet() {
                   onChange={e => setFormEdicao(f => ({ ...f, especie: e.target.value }))}>
                   <option value="gato">Gato</option>
                   <option value="cachorro">Cachorro</option>
-                  <option value="coelho">Coelho</option>
-                  <option value="passaro">Pássaro</option>
                 </select>
               </label>
               <label className="modal-label">

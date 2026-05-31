@@ -79,9 +79,10 @@ export default function PaginaLogin() {
     evento.preventDefault()
     try {
       const user = await loginUsuario(usuario, senha)
-      localStorage.setItem('vetvision-usuario', user.nome)
-      localStorage.setItem('vetvision-login',   user.login)
-      localStorage.setItem('vetvision-role',    user.role)
+      localStorage.setItem('vetvision-usuario',    user.nome)
+      localStorage.setItem('vetvision-login',      user.login)
+      localStorage.setItem('vetvision-role',       user.role)
+      localStorage.setItem('vetvision-id-usuario', user.id_usuario)
       navegar('/painel')
     } catch (err) {
       setErro(err.message || 'Usuário ou senha incorretos.')

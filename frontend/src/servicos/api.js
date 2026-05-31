@@ -128,6 +128,39 @@ export async function atualizarSenha(idUsuario, senha) {
   return resposta.json()
 }
 
+export async function trocarMinhaSenha(login, senhaAtual, novaSenha) {
+  const resposta = await fetch('/usuarios/me/senha', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ login, senha_atual: senhaAtual, nova_senha: novaSenha }),
+  })
+  if (!resposta.ok) {
+    const erro = await resposta.json().catch(() => ({}))
+    throw new Error(erro.erro || 'Erro ao trocar senha')
+  }
+  return resposta.json()
+}
+
+export async function salvarObservacoes(idAnimal, observacoes) {
+  const resposta = await fetch(`/animais/${idAnimal}/observacoes`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ observacoes }),
+  })
+  if (!resposta.ok) throw new Error('Erro ao salvar observações')
+  return resposta.json()
+}
+
+export async function transferirBaia(idAnimal, idBaia) {
+  const resposta = await fetch(`/animais/${idAnimal}/transferir`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_baia: idBaia }),
+  })
+  if (!resposta.ok) throw new Error('Erro ao transferir baia')
+  return resposta.json()
+}
+
 export async function listarEventos(idAnimal) {
   const resposta = await fetch(`/animais/${idAnimal}/eventos`)
   if (!resposta.ok) throw new Error('Erro ao buscar eventos')

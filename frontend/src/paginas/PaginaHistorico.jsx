@@ -12,8 +12,8 @@ function IconeVoltar() {
   )
 }
 
-const ESPECIES = { gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', passaro: 'Pássaro' }
-const EMOJIS   = { gato: '🐱', cachorro: '🐶', coelho: '🐰', passaro: '🐦' }
+const ESPECIES = { gato: 'Gato', cachorro: 'Cachorro' }
+const EMOJIS   = { gato: '🐱', cachorro: '🐶' }
 
 function formatarData(iso) {
   if (!iso) return '—'
@@ -119,8 +119,6 @@ export default function PaginaHistorico() {
             <option value="todos">Todas as espécies</option>
             <option value="gato">Gato</option>
             <option value="cachorro">Cachorro</option>
-            <option value="coelho">Coelho</option>
-            <option value="passaro">Pássaro</option>
           </select>
           <select className="filtro-select" value={status} onChange={e => mudarFiltro(setStatus)(e.target.value)}>
             <option value="todos">Todos os status</option>

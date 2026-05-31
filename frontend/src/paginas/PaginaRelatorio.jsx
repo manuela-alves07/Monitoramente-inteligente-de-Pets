@@ -17,7 +17,7 @@ function formatarDataHora(iso) {
 }
 
 const NOMES_ESPECIE = {
-  gato: 'Gato', cachorro: 'Cachorro', coelho: 'Coelho', passaro: 'Pássaro'
+  gato: 'Gato', cachorro: 'Cachorro'
 }
 
 export default function PaginaRelatorio() {
@@ -29,7 +29,7 @@ export default function PaginaRelatorio() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro]         = useState('')
 
-  const observacoes = localStorage.getItem(`obs-baia-${animal?.numero_baia ?? ''}`) ?? ''
+  const observacoes = animal?.observacoes ?? ''
   const config = JSON.parse(localStorage.getItem('vetvision-config') || '{}')
   const nomeClinica = config.nomeClinica || 'VetVision'
 
@@ -227,7 +227,7 @@ export default function PaginaRelatorio() {
                   <tr key={r.id_evento}>
                     <td>{i + 1}</td>
                     <td>{formatarDataHora(r.data_hora)}</td>
-                    <td>IA — YOLOv8</td>
+                    <td>Monitoramento automático</td>
                   </tr>
                 ))}
               </tbody>
@@ -253,7 +253,7 @@ export default function PaginaRelatorio() {
                   <tr key={r.id_evento}>
                     <td>{i + 1}</td>
                     <td>{formatarDataHora(r.data_hora)}</td>
-                    <td>IA — YOLOv8</td>
+                    <td>Monitoramento automático</td>
                   </tr>
                 ))}
               </tbody>

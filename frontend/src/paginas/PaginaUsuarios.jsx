@@ -111,7 +111,7 @@ export default function PaginaUsuarios() {
                     <span className="usuario-login">@{u.login}</span>
                   </div>
                   <span className={`usuario-role ${u.role === 'admin' ? 'role-admin' : 'role-user'}`}>
-                    {u.role === 'admin' ? 'Admin' : 'Usuário'}
+                    {u.role === 'admin' ? 'Administrador' : 'Veterinário'}
                   </span>
                 </div>
                 <div className="usuario-acoes">
@@ -167,8 +167,8 @@ export default function PaginaUsuarios() {
               <div className="campo-usuario">
                 <label>Perfil</label>
                 <select value={form.role} onChange={e => atualizar('role', e.target.value)}>
-                  <option value="user">Usuário</option>
-                  <option value="admin">Admin</option>
+                  <option value="user">Veterinário</option>
+                  <option value="admin">Administrador</option>
                 </select>
               </div>
             </div>
