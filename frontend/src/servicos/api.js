@@ -157,6 +157,10 @@ export async function listarAlertasAnimal(idAnimal) {
   return resposta.json()
 }
 
+export async function verificarAlertas() {
+  await fetch('/alertas/verificar', { method: 'POST' })
+}
+
 export async function listarAlertas() {
   const resposta = await fetch('/alertas')
   if (!resposta.ok) throw new Error('Erro ao buscar alertas')

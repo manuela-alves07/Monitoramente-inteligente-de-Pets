@@ -271,7 +271,13 @@ export default function PaginaRelatorio() {
                 <tr><th>Data / Hora</th><th>Descrição</th><th>Status</th></tr>
               </thead>
               <tbody>
-                {alertasDB.map(a => (
+                {Object.values(
+                  alertasDB.reduce((acc, a) => {
+                    const chave = `${a.tipo_alerta}-${a.status}`
+                    if (!acc[chave]) acc[chave] = a
+                    return acc
+                  }, {})
+                ).map(a => (
                   <tr key={a.id_alerta}>
                     <td>{formatarDataHora(a.criado_em)}</td>
                     <td>{a.descricao}</td>

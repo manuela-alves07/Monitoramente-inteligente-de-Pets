@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MenuLateral from '../componentes/MenuLateral'
 import CartaoBaia from '../componentes/CartaoBaia'
-import { fecharAlerta, listarBaias } from '../servicos/api'
+import { fecharAlerta, listarAlertasAnimal, listarBaias, verificarAlertas } from '../servicos/api'
 import './PaginaPainel.css'
 
 function IconeMenu() {
@@ -77,6 +77,7 @@ export default function PaginaPainel() {
   const [carregando, setCarregando]         = useState(true)
   const [config]                            = useState(carregarConfig)
   const [modalAlerta, setModalAlerta]       = useState(null)
+  const [alertasModal, setAlertasModal]     = useState([])
   const navegar = useNavigate()
 
   const nomeUsuario = localStorage.getItem('vetvision-usuario') ?? 'Usuário'
@@ -94,6 +95,7 @@ export default function PaginaPainel() {
   useEffect(() => {
     async function carregar() {
       try {
+        await verificarAlertas()
         const baiasDB = await listarBaias()
         setBaias(baiasDB.map(mapearBaia))
       } finally {
@@ -101,10 +103,14 @@ export default function PaginaPainel() {
       }
     }
     carregar()
+    const intervalo = setInterval(carregar, 5 * 60 * 1000)
+    return () => clearInterval(intervalo)
   }, [])
 
-  function abrirDetalhesBaia(baia) {
-    if (baia.temAlerta) {
+  async function abrirDetalhesBaia(baia) {
+    if (baia.temAlerta && baia.pet?.id) {
+      const todos = await listarAlertasAnimal(baia.pet.id)
+      setAlertasModal(todos.filter(a => a.status === 'aberto'))
       setModalAlerta(baia)
       return
     }
@@ -112,12 +118,13 @@ export default function PaginaPainel() {
   }
 
   async function confirmarFecharAlerta(baia) {
-    if (baia.idAlerta) await fecharAlerta(baia.idAlerta)
+    await Promise.all(alertasModal.map(a => fecharAlerta(a.id_alerta)))
     setBaias(prev => prev.map(b =>
       b.id_baia === baia.id_baia
         ? { ...b, temAlerta: false, descricaoAlerta: null, idAlerta: null }
         : b
     ))
+    setAlertasModal([])
     setModalAlerta(null)
   }
 
@@ -170,7 +177,9 @@ export default function PaginaPainel() {
           <div className="modal-alerta-painel" onClick={e => e.stopPropagation()}>
             <div className="modal-alerta-icone">⚠️</div>
             <h2>{modalAlerta.pet?.nome}</h2>
-            <p>{modalAlerta.descricaoAlerta}</p>
+            {alertasModal.map(a => (
+              <p key={a.id_alerta}>{a.descricao}</p>
+            ))}
             <div className="modal-alerta-acoes">
               <button className="modal-alerta-btn-secundario" onClick={() => {
                 setModalAlerta(null)

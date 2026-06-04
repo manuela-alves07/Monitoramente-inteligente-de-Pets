@@ -10,6 +10,7 @@ from banco.repositorio import (
     fechar_alerta,
     fechar_alertas_tipo,
     garantir_admin,
+    verificar_alertas_clinicos,
     listar_alertas_abertos,
     listar_alertas_animal,
     atualizar_animal,
@@ -175,6 +176,15 @@ def rota_dar_baixa(id_animal):
     return jsonify({"ok": True})
 
 
+@app.route("/alertas/verificar", methods=["POST"])
+def rota_verificar_alertas():
+    try:
+        verificar_alertas_clinicos()
+    except Exception as exc:
+        print(f"[aviso] erro ao verificar alertas: {exc}")
+    return jsonify({"ok": True})
+
+
 @app.route("/alertas", methods=["GET"])
 def rota_listar_alertas():
     return jsonify([serializar(a) for a in listar_alertas_abertos()])
@@ -327,6 +337,7 @@ def analisar():
                     origem_camera=None,
                     tipo_evento="refeicao",
                     confianca_ia=ref.get("confianca"),
+                    duracao_s=ref.get("duracao_s"),
                 )
             for beb in hidratacoes:
                 inserir_evento(
@@ -334,6 +345,7 @@ def analisar():
                     origem_camera=None,
                     tipo_evento="agua",
                     confianca_ia=beb.get("confianca"),
+                    duracao_s=beb.get("duracao_s"),
                 )
 
             if refeicoes:

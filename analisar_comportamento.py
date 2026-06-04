@@ -7,7 +7,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 
-VIDEO    = sys.argv[1] if len(sys.argv) > 1 else "exemplos/one_cat_eating.mp4"
+VIDEO    = sys.argv[1] if len(sys.argv) > 1 else "exemplos/cat_eating_pote.mp4"
 SAIDA    = "comportamento_resultado.mp4"
 MODO_API = len(sys.argv) > 1
 
@@ -23,9 +23,10 @@ MAX_DIST_TRACKER   = 80
 MAX_FRAMES_PERDIDO = 10
 
 DIST_MAX          = 1.5
-TEMPO_COMER_MIN   = 5
-TEMPO_BEBER_MIN   = 3
-TOLERANCIA_PAUSA  = 2
+TEMPO_COMER_MIN   = 10
+TEMPO_BEBER_MIN   = 7
+TOLERANCIA_PAUSA  = 5
+COOLDOWN_APOS_COMER = 5
 TEMPO_DESCANSO    = 5  * 60
 TEMPO_AGITACAO    = 15 * 60
 MOVIMENTO_BAIXO   = 1.5
@@ -88,7 +89,7 @@ def calc_movimento(hist):
 
 def tipo_tigela(bbox, largura_frame):
     cx = (bbox[0] + bbox[2]) / 2
-    return 'agua' if cx < largura_frame / 2 else 'comida'
+    return 'comida' if cx < largura_frame / 2 else 'agua'
 
 
 def novo_animal():
@@ -186,9 +187,12 @@ while cap.isOpened():
     tigelas_comida = []
     tigelas_agua   = []
 
-    for pred in predicoes:
-        if pred['class'] != CLASSE_TIGELA:
-            continue
+    potes_detectados = sorted(
+        [p for p in predicoes if p['class'] == CLASSE_TIGELA],
+        key=lambda p: float(p['confidence']), reverse=True
+    )[:1]
+
+    for pred in potes_detectados:
         bbox = pred_para_bbox(pred)
         conf = float(pred['confidence'])
         tipo = tipo_tigela(bbox, largura)
@@ -220,9 +224,18 @@ while cap.isOpened():
         if len(a['hist']) > 30:
             a['hist'].pop(0)
 
-        movimento    = calc_movimento(a['hist'])
-        perto_comida = any(dist_normalizada(bbox, t2) < DIST_MAX for t2 in tigelas_comida)
-        perto_agua   = any(dist_normalizada(bbox, t2) < DIST_MAX for t2 in tigelas_agua)
+        movimento = calc_movimento(a['hist'])
+
+        todas_tigelas = [(t2, 'comida') for t2 in tigelas_comida] + [(t2, 'agua') for t2 in tigelas_agua]
+        perto_comida = False
+        perto_agua   = False
+        if todas_tigelas:
+            tigela_mais_proxima, tipo_mais_proxima = min(
+                todas_tigelas, key=lambda x: dist_normalizada(bbox, x[0])
+            )
+            if dist_normalizada(bbox, tigela_mais_proxima) < DIST_MAX:
+                perto_comida = tipo_mais_proxima == 'comida'
+                perto_agua   = tipo_mais_proxima == 'agua'
 
         if perto_comida:
             a['saiu_refeicao'] = None
@@ -249,7 +262,10 @@ while cap.isOpened():
                                         'inicio': (agora - timedelta(seconds=duracao)).strftime('%H:%M:%S'),
                                         'duracao_s': round(duracao, 1)})
 
-        if perto_agua:
+        em_cooldown = (a['ultima_refeicao'] and
+                       (agora - a['ultima_refeicao']).total_seconds() < COOLDOWN_APOS_COMER)
+
+        if perto_agua and not em_cooldown:
             a['saiu_bebida'] = None
             if not a['bebendo_agora']:
                 a['bebendo_agora'] = True
@@ -302,9 +318,12 @@ while cap.isOpened():
                                     'duracao_s': round(tempo_agitado, 1)})
             a['inicio_agitacao'] = None
 
-        if a['comendo_agora']:
+        tempo_comendo = (agora - a['inicio_refeicao']).total_seconds() if a['inicio_refeicao'] else 0
+        tempo_bebendo = (agora - a['inicio_bebida']).total_seconds() if a['inicio_bebida'] else 0
+
+        if a['comendo_agora'] and tempo_comendo >= TEMPO_COMER_MIN:
             estado, cor = 'COMENDO', (0, 200, 0)
-        elif a['bebendo_agora']:
+        elif a['bebendo_agora'] and tempo_bebendo >= TEMPO_BEBER_MIN:
             estado, cor = 'BEBENDO', (255, 200, 0)
         elif a['estado'] == 'DESCANSANDO':
             estado, cor = a['estado'], (100, 100, 255)
@@ -374,11 +393,6 @@ for track_id, a in animais.items():
         alertas.append({'tipo': 'sem_hidratacao', 'animal_id': track_id,
                         'mensagem': f'Animal está sem beber há {sem_beber/3600:.1f}h',
                         'nivel': 'critico'})
-
-if not any(e['tipo'] == 'refeicao' for e in eventos):
-    alertas.append({'tipo': 'sem_refeicao_detectada',
-                    'mensagem': 'Nenhuma refeição confirmada no período',
-                    'nivel': 'aviso'})
 
 out.release()
 if not MODO_API:

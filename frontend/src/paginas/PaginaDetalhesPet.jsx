@@ -172,10 +172,13 @@ export default function PaginaDetalhesPet() {
     setErroAnalise('')
     try {
       const resultado = await analisarVideo(arquivo, baia?.pet?.id)
+      const [eventos, alertas] = await Promise.all([
+        listarEventos(baia?.pet?.id),
+        listarAlertasAnimal(baia?.pet?.id),
+      ])
       setRelatorioLocal(resultado)
-      if (baia?.pet?.id) {
-        listarEventos(baia.pet.id).then(setEventosDB).catch(() => {})
-      }
+      setEventosDB(eventos)
+      setAlertasAnimal(alertas)
     } catch {
       setErroAnalise('Erro ao analisar o vídeo. Verifique se o servidor está rodando.')
     } finally {
@@ -210,10 +213,14 @@ export default function PaginaDetalhesPet() {
   const pet      = baia.pet
   const dados    = petCompleto ?? pet
   const refeicoes = relatorioLocal?.refeicoes ?? []
-  const duracaoTotal = refeicoes.reduce((soma, r) => soma + r.duracao_s, 0)
-
+  const duracaoLocal = refeicoes.reduce((soma, r) => soma + r.duracao_s, 0)
   const eventosRefeicao = eventosDB.filter(e => e.tipo_evento === 'refeicao')
-  const eventosAgua     = eventosDB.filter(e => e.tipo_evento === 'agua')
+  const hoje = new Date().toDateString()
+  const eventosRefeicaoHoje = eventosRefeicao.filter(e => new Date(e.data_hora).toDateString() === hoje)
+  const duracaoDB = eventosRefeicaoHoje.reduce((soma, e) => soma + (e.duracao_s ?? 0), 0)
+  const duracaoTotal = duracaoLocal > 0 ? duracaoLocal : duracaoDB
+
+  const eventosAgua = eventosDB.filter(e => e.tipo_evento === 'agua')
 
   const ultimaAlimentacao = refeicoes.length > 0
     ? refeicoes[refeicoes.length - 1].inicio
@@ -221,7 +228,7 @@ export default function PaginaDetalhesPet() {
       ? new Date(eventosRefeicao[0].data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       : '—'
 
-  const totalRefeicoes = refeicoes.length > 0 ? refeicoes.length : eventosRefeicao.length
+  const totalRefeicoes = refeicoes.length > 0 ? refeicoes.length : eventosRefeicaoHoje.length
 
   const ultimaAgua = eventosAgua.length > 0
     ? new Date(eventosAgua[0].data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -342,7 +349,7 @@ export default function PaginaDetalhesPet() {
           </div>
         </div>
 
-        {refeicoes.length > 0 && (
+        {(refeicoes.length > 0 || eventosRefeicaoHoje.length > 0) && (
           <div className="detalhes-secao">
             <h3>Refeições detectadas hoje</h3>
             <table className="detalhes-tabela">
@@ -350,12 +357,20 @@ export default function PaginaDetalhesPet() {
                 <tr><th>Horário</th><th>Duração</th></tr>
               </thead>
               <tbody>
-                {refeicoes.map((r, i) => (
-                  <tr key={i}>
-                    <td>{r.inicio}</td>
-                    <td>{r.duracao_s}s</td>
-                  </tr>
-                ))}
+                {refeicoes.length > 0
+                  ? refeicoes.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.inicio}</td>
+                        <td>{r.duracao_s}s</td>
+                      </tr>
+                    ))
+                  : eventosRefeicaoHoje.map((r) => (
+                      <tr key={r.id_evento}>
+                        <td>{new Date(r.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td>{r.duracao_s ? `${r.duracao_s}s` : '—'}</td>
+                      </tr>
+                    ))
+                }
               </tbody>
             </table>
           </div>

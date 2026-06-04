@@ -39,16 +39,16 @@ def inserir_animal(nome, especie, tutor, id_baia, raca=None, idade=None, peso=No
         return cur.fetchone()["id_animal"]
 
 
-def inserir_evento(id_animal, origem_camera, tipo_evento, confianca_ia=None, quando=None):
+def inserir_evento(id_animal, origem_camera, tipo_evento, confianca_ia=None, quando=None, duracao_s=None):
     quando = quando or datetime.utcnow()
     with cursor_dict() as (_, cur):
         cur.execute(
             """
-            INSERT INTO evento (id_animal, origem_camera, tipo_evento, confianca_ia, data_hora)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO evento (id_animal, origem_camera, tipo_evento, confianca_ia, data_hora, duracao_s)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id_evento
             """,
-            (id_animal, origem_camera, tipo_evento, confianca_ia, quando),
+            (id_animal, origem_camera, tipo_evento, confianca_ia, quando, duracao_s),
         )
         return cur.fetchone()["id_evento"]
 
@@ -154,6 +154,58 @@ def transferir_baia(id_animal, id_baia_destino):
         )
 
 
+def _upsert_alerta(id_animal, tipo_alerta, descricao):
+    with cursor_dict() as (_, cur):
+        cur.execute(
+            """
+            INSERT INTO alerta (id_animal, tipo_alerta, descricao, status)
+            VALUES (%s, %s, %s, 'aberto')
+            ON CONFLICT (id_animal, tipo_alerta) WHERE status = 'aberto'
+            DO UPDATE SET descricao = EXCLUDED.descricao
+            """,
+            (id_animal, tipo_alerta, descricao)
+        )
+
+
+def verificar_alertas_clinicos():
+    LIMITE_COMER = 6 * 3600
+    LIMITE_BEBER = 4 * 3600
+    with cursor_dict() as (_, cur):
+        cur.execute("""
+            SELECT a.id_animal, a.nome,
+                (SELECT e.data_hora FROM evento e
+                 WHERE e.id_animal = a.id_animal AND e.tipo_evento = 'refeicao'
+                 ORDER BY e.data_hora DESC LIMIT 1) AS ultima_refeicao,
+                (SELECT e.data_hora FROM evento e
+                 WHERE e.id_animal = a.id_animal AND e.tipo_evento = 'agua'
+                 ORDER BY e.data_hora DESC LIMIT 1) AS ultima_agua
+            FROM animal a
+            WHERE a.status_internacao = 'internado'
+        """)
+        animais = cur.fetchall()
+
+    agora = datetime.utcnow()
+    for a in animais:
+        sem_comer = (agora - a['ultima_refeicao']).total_seconds() if a['ultima_refeicao'] else None
+        sem_beber = (agora - a['ultima_agua']).total_seconds() if a['ultima_agua'] else None
+
+        if sem_comer is not None:
+            if sem_comer > LIMITE_COMER:
+                horas = int(round(sem_comer / 3600, 0))
+                descricao = f"{a['nome']} está sem comer há mais de {horas} horas"
+                _upsert_alerta(a['id_animal'], 'sem_alimentacao', descricao)
+            else:
+                fechar_alertas_tipo(a['id_animal'], 'sem_alimentacao')
+
+        if sem_beber is not None:
+            if sem_beber > LIMITE_BEBER:
+                horas = int(round(sem_beber / 3600, 0))
+                descricao = f"{a['nome']} está sem beber há mais de {horas} horas"
+                _upsert_alerta(a['id_animal'], 'sem_hidratacao', descricao)
+            else:
+                fechar_alertas_tipo(a['id_animal'], 'sem_hidratacao')
+
+
 def dar_baixa(id_animal, condicao_alta=None, diagnostico_final=None,
               medicamentos_alta=None, instrucoes_alta=None, data_retorno=None):
     with cursor_dict() as (_, cur):
@@ -210,7 +262,7 @@ def garantir_baias(quantidade=6):
 def listar_eventos(id_animal=None, limite=50):
     sql = """
         SELECT id_evento, id_animal, origem_camera, tipo_evento,
-               confianca_ia, data_hora
+               confianca_ia, data_hora, duracao_s
         FROM evento
     """
     params = []
